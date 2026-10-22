@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "aurora",
+	"version": "${version}",
+	"name": "Aurora",
+	"description": "Visuals, HUD and quality of life in one mod: a themed mod menu, draggable HUD, crosshair editor with live preview, zoom and freelook, configs that switch per server, render optimization for weak PCs, Mouse Tweaks, Discord status and screenshots to the clipboard. Purely visual: no advantage in PvP.",
+	"authors": [
+		"K1llSofix"
+	],
+	"contact": {
+		"homepage": "https://modrinth.com/mod/L7X9iCgB"
+	},
+	"license": "MIT",
+	"icon": "assets/aurora/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"dev.aurora.Aurora"
+		]
+	},
+	"mixins": [
+		"aurora.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

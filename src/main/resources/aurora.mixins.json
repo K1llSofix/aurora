@@ -1,0 +1,53 @@
+{
+	"required": true,
+	"package": "dev.aurora.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"AbstractContainerScreenAccessor",
+		"AbstractSelectionListMixin",
+		"BlockEntityRenderDispatcherMixin",
+		"BossHealthOverlayAccessor",
+		"CameraMixin",
+		"ChatComponentMixin",
+		"ChatGraphicsAccessMixin",
+		"ChatListenerMixin",
+		"ChatScreenMixin",
+		"ClientClockInstanceMixin",
+		"ConnectScreenMixin",
+		"EntityRenderDispatcherMixin",
+		"FramerateLimitTrackerMixin",
+		"GameRendererMixin",
+		"GenericMessageScreenMixin",
+		"GuiGraphicsExtractorMixin",
+		"GuiMixin",
+		"HandRendererMixin",
+		"HolderReferenceAccessor",
+		"HudMixin",
+		"KeyboardHandlerMixin",
+		"LevelLoadingScreenMixin",
+		"LevelMixin",
+		"LevelRendererMixin",
+		"LightmapExtractorMixin",
+		"LoadingOverlayMixin",
+		"MinecraftAccountAccessor",
+		"MouseHandlerMixin",
+		"MultiPlayerGameModeMixin",
+		"OverlayTextureAccessor",
+		"PanoramaMixin",
+		"ParticleAccessor",
+		"ParticleEngineMixin",
+		"PauseScreenMixin",
+		"PlayerTabOverlayMixin",
+		"ProgressScreenMixin",
+		"RealmsClientAccessor",
+		"ScreenEffectRendererMixin",
+		"ScreenshotMixin",
+		"SkinManagerMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}
