@@ -22,6 +22,7 @@ const { Icons, CATALOG } = require('./core/icons');
 const { ServerPinger, parseAddress } = require('./core/servers');
 const { News } = require('./core/news');
 const { DiscordPresence } = require('./core/discord');
+const { Updater } = require('./core/updater');
 const defaults = require('./defaults');
 
 const APP_DIR = path.join(__dirname, '..', '..');
@@ -290,6 +291,20 @@ function openExternal(url) {
     // Not a URL: ignore.
   }
 }
+
+// ---------------------------------------------------------------------------- updates
+
+// The installed launcher follows the releases of LAUNCHER_REPO; a development run only checks a
+// test feed given in AURORA_UPDATE_FEED.
+const updater = new Updater({
+  feed: DEV
+    ? process.env.AURORA_UPDATE_FEED || null
+    : defaults.LAUNCHER_REPO ? `https://github.com/${defaults.LAUNCHER_REPO}/releases/latest/download` : null,
+  version: app.getVersion(),
+  dir: path.join(paths.cache, 'launcher-update'),
+  log: trace,
+});
+updater.on('change', (s) => send('updates:state', s));
 
 // ---------------------------------------------------------------------------- Discord
 
@@ -658,6 +673,7 @@ function publicSettings() {
     motion: s.motion,
     showSnapshots: s.showSnapshots,
     discord: s.discord !== false,
+    autoUpdate: s.autoUpdate !== false,
     selectedInstall: s.selectedInstall,
   };
 }
@@ -674,6 +690,7 @@ const SETTING_KEYS = {
   motion: (v) => typeof v === 'boolean',
   showSnapshots: (v) => typeof v === 'boolean',
   discord: (v) => typeof v === 'boolean',
+  autoUpdate: (v) => typeof v === 'boolean',
 };
 
 const ICON_IDS = new Set(CATALOG.map((c) => `mc:${c.id}`));
@@ -798,6 +815,7 @@ function registerIpc() {
     }
     settings.save();
     updatePresence();
+    updater.schedule(settings.data.autoUpdate !== false);
     const next = publicSettings();
     send('settings:changed', next);
     return next;
@@ -1070,6 +1088,17 @@ function registerIpc() {
   });
   handle('modpacks:cancel', () => packJob?.abort());
 
+  handle('updates:state', () => updater.state);
+  handle('updates:check', () => updater.check());
+  handle('updates:install', () => {
+    // A running game or download would be left without its launcher: let them finish first.
+    if (game.process || game.state !== 'idle' || packJob) throw new LauncherError('update_busy');
+    if (updater.install({ relaunch: true })) {
+      quitting = true;
+      app.quit();
+    }
+  });
+
   handle('news:get', () => news.all());
 
   handle('java:pick', async () => {
@@ -1105,6 +1134,7 @@ app.whenReady().then(() => {
   });
   registerIpc();
   updatePresence();
+  updater.schedule(settings.data.autoUpdate !== false);
   // A newer Aurora on Modrinth shows up in the installations without waiting for a launch.
   mods.refreshAurora().then(() => send('app:event', { type: 'installsChanged' })).catch(() => {});
   const launchArg = parseLaunch(process.argv);
@@ -1123,6 +1153,8 @@ app.on('before-quit', () => {
   quitting = true;
   settings.flush();
   accounts.store.flush();
+  // A downloaded update goes in while the launcher is closed; the next start is the new version.
+  if (settings.data.autoUpdate !== false) updater.install({ relaunch: false });
 });
 
 app.on('window-all-closed', () => {

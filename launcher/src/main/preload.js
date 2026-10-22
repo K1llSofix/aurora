@@ -108,6 +108,12 @@ contextBridge.exposeInMainWorld('aurora', {
     install: (installId, kind, project) => call('packs:install', installId, kind, project),
     installed: (installId, kind) => call('packs:installed', installId, kind),
   },
+  updates: {
+    state: () => call('updates:state'),
+    check: () => call('updates:check'),
+    install: () => call('updates:install'),
+    onState: (fn) => on('updates:state', fn),
+  },
   modpacks: {
     search: (query) => call('modpacks:search', query),
     versions: (project) => call('modpacks:versions', project),

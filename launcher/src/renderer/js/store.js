@@ -39,6 +39,7 @@ export function showError(e) {
 export const state = {
   info: null,
   settings: null,
+  update: null,
   installs: [],
   accounts: [],
   servers: [],

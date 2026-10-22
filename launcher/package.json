@@ -11,7 +11,8 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "icon": "python scripts/make-icon.py",
-    "dist": "node scripts/prepare-mod.js && electron-builder --win nsis --x64"
+    "dist": "node scripts/prepare-mod.js && electron-builder --win nsis --x64 && node scripts/update-info.js",
+    "release": "node scripts/release.js"
   },
   "devDependencies": {
     "electron": "44.9.1",

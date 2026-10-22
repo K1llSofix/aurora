@@ -190,6 +190,28 @@ module.exports = ({ win, app }) => {
           console.log('[shots] installs', await js("(async () => JSON.stringify((await window.aurora.installs.list()).value.map((i) => ({ name: i.name, version: i.version, loader: i.loader, loaderVersion: i.loaderVersion, aurora: i.aurora, icon: i.icon, modpack: i.modpack, mods: i.modCount }))))()"));
           continue;
         }
+        if (page === 'update') {
+          // A launcher update from AURORA_UPDATE_FEED: the sidebar note, the settings row, then
+          // the restart (with AURORA_UPDATE_DRY the installer is only logged). Put it last.
+          for (let i = 0; i < 60; i++) {
+            const status = await js('(async () => (await window.aurora.updates.state()).value.status)()');
+            if (i % 5 === 0) console.log('[shots] update', status);
+            if (status === 'ready' || status === 'error') break;
+            await wait(1000);
+          }
+          await js("document.querySelector('.nav-item[data-page=\"home\"]').click()");
+          await wait(1500);
+          await shot('update-sidebar');
+          await js("document.querySelector('.nav-item[data-page=\"settings\"]').click()");
+          await wait(900);
+          await js("[...document.querySelectorAll('.set-row')].find((r) => r.innerText.includes('Aurora Launcher'))?.scrollIntoView({ block: 'center' })");
+          await wait(500);
+          await shot('update-settings');
+          console.log('[shots] restarting through the sidebar note');
+          await js("document.querySelector('.update-note')?.click()");
+          await wait(3000);
+          continue;
+        }
         if (page === 'packcard') {
           // The "Install a modpack" card on the installations page and its menu.
           await js("document.querySelector('.nav-item[data-page=\"installs\"]').click()");

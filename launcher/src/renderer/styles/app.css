@@ -721,3 +721,11 @@ body.splash { background: transparent; }
 .pack-progress .amount { color: var(--text-3); font-size: 12px; font-variant-numeric: tabular-nums; }
 .pack-progress .track { height: 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
 .pack-progress .track i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--accent); box-shadow: 0 0 12px rgba(45, 212, 191, 0.45); transition: width 0.25s linear; }
+
+/* Launcher update, once downloaded */
+.update-note { display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 8px; padding: 8px 12px; border-radius: 14px; text-align: left; background: var(--accent-soft); border: 1px solid rgba(45, 212, 191, 0.35); animation: rise 0.4s var(--ease); transition: border-color 0.2s; }
+.update-note:hover { border-color: rgba(45, 212, 191, 0.65); }
+.update-note .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--accent); color: #fff; flex: none; box-shadow: 0 6px 16px rgba(79, 163, 247, 0.35); }
+.update-note .ic svg { width: 17px; height: 17px; }
+.update-note .t { font-weight: 700; font-size: 13.5px; }
+.update-note .d { font-size: 12px; color: var(--text-2); margin-top: 1px; }

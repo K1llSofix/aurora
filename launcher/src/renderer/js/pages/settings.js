@@ -1,7 +1,7 @@
 import { h, fill, btn, clear, toast, toggle, segmented, menu } from '../dom.js';
 import { icon } from '../icons.js';
 import { t, formatMemory, errorText } from '../i18n.js';
-import { api, state, set, selectedInstall, showError } from '../store.js';
+import { api, state, set, on, selectedInstall, showError } from '../store.js';
 import { clientIdDialog } from '../accounts.js';
 
 async function save(patch, quiet = false) {
@@ -114,6 +114,34 @@ function javaCard() {
     custom);
 }
 
+/** The launcher's version and its update: checked, being downloaded, or ready to install. */
+function updateRow() {
+  const text = h('div.d');
+  const control = h('div.control');
+  const el = h('div.set-row', h('div.text', h('div.t', t('settings.version', { version: state.info.version })), text), control);
+  const render = () => {
+    const u = state.update || { status: 'off' };
+    const lines = {
+      off: t('update.off'),
+      idle: t('update.idle'),
+      checking: t('update.checking'),
+      none: t('update.none'),
+      downloading: t('update.downloading', { version: u.version, p: Math.round((u.progress || 0) * 100) }),
+      ready: t('update.readyLong', { version: u.version }),
+      error: `${t('update.error')}. ${u.error ? errorText(u.error) : ''}`.trim(),
+    };
+    text.textContent = lines[u.status] || '';
+    if (u.status === 'ready') {
+      fill(control, btn(t('update.restartButton'), { class: 'primary', icon: 'refresh', onclick: () => api.updates.install().catch(showError) }));
+    } else {
+      const busy = ['off', 'checking', 'downloading'].includes(u.status);
+      fill(control, btn(t('update.check'), { icon: 'refresh', disabled: busy, onclick: () => api.updates.check().catch(showError) }));
+    }
+  };
+  render();
+  return { el, render };
+}
+
 function microsoftCard() {
   const field = h('input.input.mono', { placeholder: '00000000-0000-0000-0000-000000000000', spellcheck: false, style: { width: '330px' } });
   api.accounts.clientId().then((id) => { field.value = id || ''; }).catch(() => {});
@@ -136,6 +164,7 @@ export function render() {
   const s = state.settings;
   const jvm = h('input.input.mono', { value: s.jvmArgs || '', placeholder: '-XX:+UseZGC', style: { width: '330px' } });
   jvm.addEventListener('change', () => save({ jvmArgs: jvm.value.trim() }));
+  const updates = updateRow();
   const el = h('div.page',
     h('div.page-head', h('div', h('h1', t('settings.title')), h('p', t('settings.subtitle')))),
     h('div.settings',
@@ -151,7 +180,9 @@ export function render() {
           ['hide', 'minimize', 'keep', 'close'].map((k) => [k, t(`settings.after.${k}`)]), s.afterLaunch, (v) => save({ afterLaunch: v }))),
         setRow(t('settings.language'), null, selectRow([['auto', t('settings.lang.auto')], ['ru', 'Русский'], ['en', 'English']], s.language, (v) => save({ language: v }, true))),
         setRow(t('settings.motion'), t('settings.motionHint'), toggle(s.motion, (on) => save({ motion: on }, true))),
-        setRow(t('settings.discord'), t('settings.discordHint'), toggle(s.discord !== false, (on) => save({ discord: on })))),
+        setRow(t('settings.discord'), t('settings.discordHint'), toggle(s.discord !== false, (on) => save({ discord: on }))),
+        setRow(t('settings.autoUpdate'), t('settings.autoUpdateHint'), toggle(s.autoUpdate !== false, (on) => save({ autoUpdate: on }))),
+        updates.el),
       microsoftCard(),
       h('div.card.set-card',
         h('h3', icon('folder'), t('settings.files')),
@@ -161,5 +192,5 @@ export function render() {
           icon: 'shield',
           onclick: () => api.game.repair(selectedInstall().id).catch(showError),
         })))));
-  return { el };
+  return { el, destroy: on('update', updates.render) };
 }

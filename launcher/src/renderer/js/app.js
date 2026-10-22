@@ -299,14 +299,33 @@ function crashDialog(exit) {
 
 // ------------------------------------------------------------------ shell
 
+/** The sidebar note once a new launcher version is downloaded: one click restarts into it. */
+function updateNotice() {
+  const el = h('div');
+  const render = () => {
+    const u = state.update;
+    if (!u || u.status !== 'ready') {
+      clear(el);
+      return;
+    }
+    fill(el, h('button.update-note', { type: 'button', onclick: () => api.updates.install().catch(showError) },
+      h('div.ic', icon('download')),
+      h('div.grow', h('div.t', t('update.ready', { version: u.version })), h('div.d', t('update.restart')))));
+  };
+  render();
+  return { el, render };
+}
+
 function buildShell() {
   const nav = h('nav.nav', NAV.map(([page, ic]) => h('button.nav-item', { type: 'button', dataset: { page }, onclick: () => navigate(page) }, icon(ic), h('span', t(`nav.${page}`)))));
   const account = accountCard();
+  const update = updateNotice();
   const maxIcon = h('span', icon(state.settings.window && state.settings.window.maximized ? 'restore' : 'maximize'));
   const sidebar = h('aside.sidebar',
     h('div.brand', logo(), h('div', h('div.name', 'Aurora'), h('div.sub', 'MINECRAFT LAUNCHER'))),
     nav,
     h('div.spacer'),
+    update.el,
     account.el);
   const view = h('section', { id: 'view' });
   const playbar = buildPlaybar();
@@ -317,7 +336,7 @@ function buildShell() {
       h('button.win-btn.close', { type: 'button', onclick: () => api.window.close(), 'aria-label': 'Close' }, icon('x'))));
   const main = h('main.main', titlebar, view, playbar.el);
   const app = h('div.app', sidebar, main);
-  return { app, nav, view, account, playbar, maxIcon };
+  return { app, nav, view, account, update, playbar, maxIcon };
 }
 
 function mountShell() {
@@ -378,6 +397,9 @@ async function boot() {
   });
   on('game', () => shell.playbar.renderStatus());
   on('progress', () => shell.playbar.renderStatus());
+  on('update', () => shell.update.render());
+  api.updates.onState((u) => set('update', u));
+  api.updates.state().then((u) => set('update', u)).catch(() => {});
 
   api.settings.onChanged((s) => set('settings', s));
   api.accounts.onChanged((list) => set('accounts', list));

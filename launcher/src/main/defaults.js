@@ -56,6 +56,7 @@ function defaultSettings(mcVersion) {
     motion: true,
     showSnapshots: false,
     discord: true,
+    autoUpdate: true,
     selectedInstall: 'aurora',
     installs: [defaultInstall(mcVersion)],
     servers: SERVERS.map((s) => ({ ...s, builtin: true })),
@@ -106,4 +107,11 @@ const AURORA_MODRINTH = 'L7X9iCgB';
 // The public page of the mod: the button under the Discord status leads there.
 const AURORA_PAGE = `https://modrinth.com/mod/${AURORA_MODRINTH}`;
 
-module.exports = { recommendedMemory, defaultInstall, defaultSettings, SERVERS, AURORA_NEWS, DISCORD_APP_ID, AURORA_MODRINTH, AURORA_PAGE };
+/**
+ * The public GitHub repository whose releases update the launcher (owner/name). Each release
+ * carries the installer and latest.yml (npm run dist writes both, npm run release publishes them).
+ * Empty: the launcher never looks for updates.
+ */
+const LAUNCHER_REPO = 'K1llSofix/aurora';
+
+module.exports = { recommendedMemory, defaultInstall, defaultSettings, SERVERS, AURORA_NEWS, DISCORD_APP_ID, AURORA_MODRINTH, AURORA_PAGE, LAUNCHER_REPO };
