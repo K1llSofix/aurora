@@ -1,47 +1,47 @@
-# Трейлер Aurora Launcher
+# Aurora Launcher trailer
 
-Трейлер собирается целиком из кода: настоящий лаунчер снимается вне экрана со сценарием и курсором, голос и музыка синтезируются, кадры монтируются в Python. Готовое видео — `out/aurora-trailer.mp4` (1920×1080, 60 кадров/с, H.264 + AAC, 64 секунды).
+The trailer is built entirely from code: the real launcher is filmed offscreen following a script with a cursor, the voice and music are synthesized, and the frames are edited in Python. The finished video is `out/aurora-trailer.mp4` (1920×1080, 60 fps, H.264 + AAC, 64 seconds).
 
-## Что в нём
+## What's in it
 
-| Время | Что происходит |
+| Time | What happens |
 |---|---|
-| 0–8 с | Лаунчер проявляется из размытия, робот-голос: «Welcome to Aurora», камера наезжает на «Welcome to Aurora» на главной, титульная карточка AURORA LAUNCHER |
-| 8–16 с | Дроп. «One click to play»: клик по «Играть», загрузка игры, запуск |
-| 16–20 с | «Every server, live»: живой пинг серверов и вход на сервер |
-| 20–28 с | «Mods · Resource packs · Shaders»: поиск в каталоге Modrinth, ресурспаки, шейдеры |
-| 28–36 с | «Your skin, your style»: рисование на 3D-скине и галерея |
-| 36–42 с | «Shortcuts & icons»: ярлык на рабочем столе и иконки из текстур Minecraft |
-| 42–46 с | «Discord status»: карточка статуса в Discord |
-| 46–56 с | «Aurora Client»: нарезка внутриигровых скриншотов мода |
-| 56–64 с | Логотип, «AURORA», голос: «Aurora.» |
+| 0–8 s | The launcher fades in from a blur, a robotic voice says "Welcome to Aurora", the camera pushes in on "Welcome to Aurora" on the home page, then the AURORA LAUNCHER title card |
+| 8–16 s | The drop. "One click to play": a click on "Play", the game downloading, the launch |
+| 16–20 s | "Every server, live": live server ping and joining a server |
+| 20–28 s | "Mods · Resource packs · Shaders": searching the Modrinth catalog, resource packs, shaders |
+| 28–36 s | "Your skin, your style": painting on the 3D skin and the gallery |
+| 36–42 s | "Shortcuts & icons": a desktop shortcut and icons from Minecraft textures |
+| 42–46 s | "Discord status": the Discord status card |
+| 46–56 s | "Aurora Client": a montage of the mod's in-game screenshots |
+| 56–64 s | The logo, "AURORA", the voice: "Aurora." |
 
-Музыка (синтвейв, 120 BPM, ля минор) написана кодом в `audio.py`: все склейки стоят на тактах, на каждой — свуш и вспышка, клики курсора слышны.
+The music (synthwave, 120 BPM, A minor) is written in code in `audio.py`: every cut lands on a bar line, each with a whoosh and a flash, and the cursor clicks are audible.
 
-## Пересборка
+## Rebuilding
 
-Нужны Node.js (лаунчер), Python 3 с `numpy`, `Pillow` и `imageio-ffmpeg` (из него берётся ffmpeg) и голос Microsoft Zira в Windows.
+Requires Node.js (for the launcher), Python 3 with `numpy`, `Pillow` and `imageio-ffmpeg` (which provides ffmpeg), and the Microsoft Zira voice in Windows.
 
-1. Съёмка лаунчера (из папки `launcher`), около трёх минут:
+1. Filming the launcher (from the `launcher` folder), about three minutes:
 
    ```bash
    AURORA_SCRIPT=trailer/director.js AURORA_HIDDEN=1 npx electron .
    ```
 
-   `AURORA_TRAILER_SCENES=play,servers` переснимает только нужные сцены. Запуск игры в съёмке подменяется: кнопки «Играть» показывают загрузку и запуск, но Minecraft не стартует.
+   `AURORA_TRAILER_SCENES=play,servers` re-films only the scenes you name. Launching the game is faked during filming: the "Play" buttons show the download and the launch, but Minecraft does not start.
 
-2. Голос:
+2. The voice:
 
    ```bash
    powershell -File trailer/voice.ps1 -Text "Welcome to Aurora" -Out trailer/out/audio/raw-welcome.wav
    powershell -File trailer/voice.ps1 -Text "Aurora." -Out trailer/out/audio/raw-aurora.wav
    ```
 
-3. Звук: `python trailer/audio.py` → `out/audio/trailer.wav`.
-4. Видео: `python trailer/compose.py` → `out/aurora-trailer.mp4`. Отдельные кадры для проверки: `python trailer/compose.py --stills 3.6 12.5`.
+3. The sound: `python trailer/audio.py` → `out/audio/trailer.wav`.
+4. The video: `python trailer/compose.py` → `out/aurora-trailer.mp4`. Single frames to check: `python trailer/compose.py --stills 3.6 12.5`.
 
-Монтаж — `timeline.py`: время каждой сцены, куски записи, титры и ключи камеры (зум и точка фокуса в координатах окна 1280×780). Сценарий съёмки — `director.js`.
+The edit lives in `timeline.py`: the timing of each scene, the pieces of footage, the captions and the camera keys (zoom and focus point in the coordinates of the 1280×780 window). The filming script is `director.js`.
 
-## Превью
+## Thumbnail
 
-`python trailer/thumbnail.py` → `out/thumbnail.jpg` (английская) и `out/thumbnail-ru.jpg` (русская), 1920×1080, около 0,5 МБ — подходят для YouTube (лимит 2 МБ). Кадры лаунчера и сияния берутся из той же съёмки (`out/footage`), машущий игрок рисуется в 3D по скину `thumbnail-skin.png` (`skin3d.py`, классические руки). Раскладка — константы в начале `thumbnail.py`: какие кадры взять, где стоят и как повёрнуты окна, поза и размер игрока.
+`python trailer/thumbnail.py` → `out/thumbnail.jpg` (English) and `out/thumbnail-ru.jpg` (Russian), 1920×1080, about 0.5 MB each, fit for YouTube (2 MB limit). The launcher and aurora frames come from the same footage (`out/footage`), and the waving player is drawn in 3D from the skin `thumbnail-skin.png` (`skin3d.py`, classic arms). The layout is set by the constants at the top of `thumbnail.py`: which frames to use, where the windows stand and how they are turned, and the player's pose and size.

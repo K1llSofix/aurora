@@ -1,209 +1,211 @@
-# Aurora — визуалы и HUD для Minecraft 26.3
+# Aurora Client — visuals and HUD for Minecraft 26.3
 
-Клиентский мод для **Fabric** в духе Lunar Client и LabyMod: меню модов с поиском и темами, перетаскиваемый HUD, свой прицел с живым предпросмотром, зум, свободный обзор, косметика вроде кругов прыжка и шлейфа, собственные главное меню, меню паузы, чат, таб и экраны загрузки, **конфиги** (PvP, выживание, свои) с автоматической сменой по серверу, **оптимизация** для слабых ПК, Mouse Tweaks, скриншоты в буфер обмена, статус в Discord, бинды команд и переключение аккаунтов прямо в игре. Весь интерфейс нарисован векторно (сглаженные скруглённые формы, мягкие тени), текст — шрифтом Inter с атласом под текущий масштаб GUI, поэтому он чёткий при любом размере окна.
+**[Download Aurora Launcher](https://github.com/K1llSofix/aurora/releases/latest)** · [Aurora Client on Modrinth](https://modrinth.com/mod/L7X9iCgB)
 
-К моду есть свой **[Aurora Launcher](launcher/README.md)**: он ставит Minecraft, Fabric, Fabric API и Aurora одной кнопкой, хранит аккаунты, показывает живой список серверов, каталог модов, ресурспаков и шейдеров Modrinth, делает ярлыки, которые запускают игру сразу, и даёт нарисовать скин офлайн-аккаунта.
+A client mod for **Fabric** in the spirit of Lunar Client and LabyMod: a searchable, themed mod menu, a draggable HUD, a crosshair editor with a live preview, zoom, freelook, cosmetics like jump circles and trails, its own title screen, pause menu, chat, player list and loading screens, **profiles** (PvP, survival, your own) that switch automatically per server, an **optimizer** for weak PCs, Mouse Tweaks, screenshots straight to the clipboard, a Discord status, command binds and account switching right in the game. The whole interface is drawn as vector shapes (anti-aliased rounded corners, soft shadows) and text uses the Inter font with an atlas for the current GUI scale, so it stays sharp at any window size.
 
-Все функции чисто визуальные и не дают преимущества в PvP: никаких ESP, «трейсеров» и автокликеров. Хитбоксы, как и ванильный F3+B, не видны сквозь стены и не показываются у невидимых сущностей.
+The mod comes with its own **[Aurora Launcher](launcher/README.md)**: it installs Minecraft, Fabric, Fabric API and Aurora with one button, keeps your accounts, shows a live server list, the Modrinth catalog of mods, resource packs, shaders and modpacks, makes shortcuts that start the game straight away, and lets you paint the skin of an offline account.
 
-| Главное меню | Меню модов |
+Every feature is purely visual and gives no PvP advantage: no ESP, no tracers, no autoclickers. Hitboxes, like vanilla F3+B, are not visible through walls and are not shown for invisible entities.
+
+| Title screen | Mod menu |
 |---|---|
 | ![](screenshots/01-main-menu.jpg) | ![](screenshots/02-mod-menu.jpg) |
-| **Настройки и пипетка цвета** | **Редактор HUD** |
+| **Settings and the color picker** | **HUD editor** |
 | ![](screenshots/03-settings-color-picker.jpg) | ![](screenshots/04-hud-editor.jpg) |
-| **Китайская шляпа и круг прыжка** | **HUD и стеклянный хотбар** |
+| **China hat and jump circle** | **HUD and the glass hotbar** |
 | ![](screenshots/05-china-hat-jump-circle.jpg) | ![](screenshots/06-hud-glass-hotbar.jpg) |
-| **Вкладка «Бинды»** | **Target HUD с головой моба** |
+| **The Binds tab** | **Target HUD with a mob head** |
 | ![](screenshots/07-binds.jpg) | ![](screenshots/08-target-hud-mob-head.jpg) |
-| **Фон меню «Закат»** | **Фон меню «Синтвейв»** |
+| **"Sunset" menu background** | **"Synthwave" menu background** |
 | ![](screenshots/09-background-sunset.jpg) | ![](screenshots/10-background-synthwave.jpg) |
-| **Чат, скорборд, боссбар и хитбоксы** | **Таб с пингом в мс** |
+| **Chat, scoreboard, boss bar and hitboxes** | **Player list with ping in ms** |
 | ![](screenshots/11-chat-scoreboard-hitboxes.jpg) | ![](screenshots/12-tab-list.jpg) |
-| **Меню паузы** | **Аккаунты** |
+| **Pause menu** | **Accounts** |
 | ![](screenshots/13-pause-menu.jpg) | ![](screenshots/14-accounts.jpg) |
 
-## Лаунчер
+## The launcher
 
-| Aurora Launcher | Серверы с онлайном и пингом |
+| Aurora Launcher | Servers with players and ping |
 |---|---|
 | ![](screenshots/15-launcher-home.jpg) | ![](screenshots/16-launcher-servers.jpg) |
-| **Моды и каталог Modrinth** | **Настройки** |
+| **Mods and the Modrinth catalog** | **Settings** |
 | ![](screenshots/17-launcher-mods.jpg) | ![](screenshots/19-launcher-settings.jpg) |
 
-Самый простой способ играть с Aurora — установщик `AuroraLauncher-Setup-1.0.0.exe` (собирается из папки [`launcher`](launcher/README.md) командой `npm run dist`). Лаунчер сам скачает игру, Java 25 от Mojang, Fabric, Fabric API и мод, а при обновлении лаунчера обновит и Aurora. Подробности — в [README лаунчера](launcher/README.md).
+The easiest way to play with Aurora is the launcher installer from the [releases page](https://github.com/K1llSofix/aurora/releases/latest) (built from the [`launcher`](launcher/README.md) folder with `npm run dist`). The launcher downloads the game, Java 25 from Mojang, Fabric, Fabric API and the mod, updates itself from GitHub releases and takes new builds of the mod from Modrinth. See the [launcher README](launcher/README.md) for details.
 
-## Установка вручную
+## Manual installation
 
-1. Установите [Fabric Loader](https://fabricmc.net/use/) **0.19.5+** для Minecraft **26.3**.
-2. Положите в папку `mods`:
-   - `aurora-1.0.0+26.3.jar` (из `build/libs/` после сборки);
-   - [Fabric API](https://modrinth.com/mod/fabric-api) **0.164.0+26.3** или новее.
-3. Нужна Java 25 (её ставит официальный лаунчер для 26.x).
+1. Install [Fabric Loader](https://fabricmc.net/use/) **0.19.5+** for Minecraft **26.3**.
+2. Put into the `mods` folder:
+   - `aurora-1.0.0+26.3.jar` (from `build/libs/` after a build, or from Modrinth);
+   - [Fabric API](https://modrinth.com/mod/fabric-api) **0.164.0+26.3** or newer.
+3. Java 25 is required (the official launcher installs it for 26.x).
 
-## Управление
+## Controls
 
-| Клавиша | Действие |
+| Key | Action |
 |---|---|
-| **Right Shift** | Меню модов Aurora |
-| **C** (удерживать) | Зум; колёсико меняет кратность |
-| **Left Alt** (удерживать) | Свободный обзор (осмотреться, не поворачивая персонажа) |
+| **Right Shift** | Aurora mod menu |
+| **C** (hold) | Zoom; the mouse wheel changes the magnification |
+| **Left Alt** (hold) | Freelook (look around without turning your character) |
 
-Все бинды собраны на вкладке **«Бинды»** в меню модов: клавиши Aurora (меню, зум, свободный обзор), **бинды команд** и клавиша вкл/выкл для каждого модуля. Нажмите на клавишу и затем новую; Esc или Backspace очищает бинд, ПКМ снимает его. Конфликты с другими биндами и ванильным управлением подсвечиваются жёлтым — при наведении видно, с чем именно. Есть поиск и «Сбросить все». Клавиши для букв подписаны латиницей независимо от раскладки. При переключении модуля клавишей появляется уведомление в правом нижнем углу.
+All binds live on the **Binds** tab of the mod menu: Aurora's own keys (menu, zoom, freelook), **command binds** and an on/off key for every module. Click a key, then press a new one; Esc or Backspace clears the bind, a right click unbinds it. Conflicts with other binds and vanilla controls are highlighted in yellow, and hovering shows what they clash with. There is a search field and "Reset all". Letter keys are labelled in Latin whatever your keyboard layout. Toggling a module with its key shows a notification in the bottom right corner.
 
-### Бинды команд
+### Command binds
 
-В разделе **«Команды»** вкладки «Бинды» нажмите **«+ Добавить»**, впишите команду (например `/spawn`, `/home`, `/warp pvp`) и назначьте клавишу — подойдут и боковые кнопки мыши. Нажатие клавиши в игре отправляет команду (текст без `/` уходит в чат как сообщение) и показывает уведомление. Повторное срабатывание ограничено, чтобы случайно не заспамить. Крестик справа удаляет бинд. Модуль «Бинды команд» в разделе «Утилиты» включает и выключает их все разом.
+In the **Commands** section of the Binds tab, click **"+ Add"**, type a command (for example `/spawn`, `/home`, `/warp pvp`) and assign a key — side mouse buttons work too. Pressing the key in game sends the command (text without `/` goes to the chat as a message) and shows a notification. Repeats are rate-limited so you cannot spam by accident. The cross on the right deletes a bind. The "Command Binds" module in the Utility category turns them all on or off at once.
 
-## Меню модов
+## Mod menu
 
-- Категории слева (Все / HUD / Визуал / Утилиты / Оптимизация), счётчики модулей, индикатор активной вкладки скользит между пунктами. Внизу рядом **«Конфиги»**, **«Бинды»** и **«Настройки»**, под ними кнопка редактора HUD.
-- **Поиск**: просто начните печатать — фокус сам уйдёт в поле поиска.
-- Карточка модуля: переключатель — вкл/выкл, клик по карточке — настройки, **ПКМ** по карточке — быстрое вкл/выкл.
-- Настройки: переключатели, слайдеры, сегментные кнопки и выпадающие списки, пипетка цвета (насыщенность/яркость, оттенок, прозрачность, режим «Хрома», готовые цвета), назначение клавиш, сброс к умолчаниям.
-- **Настройки клиента** (шестерёнка внизу слева): 8 тем оформления (Аврора, Океан, Закат, Роза, Изумруд, Багрянец, Моно и свой цвет), скорость анимаций, размытие фона, стиль HUD (Современный / Классика / Минимум), шрифт HUD (Inter / Minecraft), прозрачность фона, акцентная полоска, цвет и тень текста, главное меню Aurora.
+- Categories on the left (All mods / HUD / Visual / Utility / Performance) with module counts and an indicator that slides between them. At the bottom are **Profiles**, **Binds** and **Settings**, with the HUD Editor button below.
+- **Search**: just start typing, the search field takes focus by itself.
+- A module card: the switch turns it on or off, a click on the card opens its settings, a **right click** on the card toggles it quickly.
+- Settings: switches, sliders, segmented buttons and dropdowns, a color picker (saturation/brightness, hue, opacity, a "Chroma" mode, preset colors), key binding and reset to defaults.
+- **Client settings** (the gear at the bottom left): 8 themes (Aurora, Ocean, Sunset, Rose, Emerald, Crimson, Mono and a custom color), animation speed, background blur, HUD style (Modern / Classic / Minimal), HUD font (Inter / Minecraft), background opacity, the accent bar, text color and shadow, and the Aurora main menu.
 
-## Конфиги
+## Profiles
 
-Вкладка **«Конфиги»** хранит наборы настроек целиком: какие модули включены, их настройки и раскладку HUD. Тема, клавиши и бинды команд при загрузке конфига остаются вашими.
+The **Profiles** page keeps whole setups: which modules are on, their settings and the HUD layout. Your theme, keys and command binds stay yours when a profile loads.
 
-- **Готовые:** PvP (клавиши, CPS, дистанция, комбо, Target HUD, прицел с разлётом и перезарядкой, низкий огонь), Выживание (координаты с биомом и Незером, компас, часы, счётчик предметов), Строитель (заливка блока под прицелом, всегда день и ясное небо), Минимализм и Для стрима.
-- **Свои:** «Сохранить текущую» делает конфиг из того, что включено сейчас. Имя меняется прямо в строке, рядом кнопки «Сохранить текущую настройку в этот конфиг» и удаления.
-- **Поделиться:** кнопка копирования кладёт в буфер код вида `AURORA1:...`, а «Вставить код» добавляет конфиг друга.
-- **Отмена:** если загруженный конфиг не понравился, кнопка со стрелкой отменяет последнюю загрузку и возвращает прошлую настройку.
-- **Конфиг для сервера:** впишите в поле «Авто на сервере» адрес (`hypixel.net` подходит и для `mc.hypixel.net`, можно несколько через запятую), и при заходе на этот сервер конфиг включится сам, а после выхода всё вернётся как было.
+- **Ready-made:** PvP (keystrokes, CPS, reach, combo, Target HUD, a crosshair with movement spread and cooldown, low fire), Survival (coordinates with biome and Nether coordinates, compass, clock, item counter), Builder (a filled outline for the targeted block, always day and clear skies), Minimal and Streaming.
+- **Your own:** "Save current" makes a profile out of what is on right now. Rename it right in its row; next to it are "Save the current setup into this profile" and delete.
+- **Sharing:** the copy button puts a code like `AURORA1:...` on the clipboard, and "Paste code" adds a profile a friend sent you.
+- **Undo:** if you do not like a profile you loaded, the arrow button undoes the last load and brings the previous setup back.
+- **Per server:** type a server address into "Auto on server" (`hypixel.net` also covers `mc.hypixel.net`, several can be separated by commas), and the profile turns on when you join that server and everything switches back when you leave.
 
-Конфиги лежат в `config/aurora/profiles`.
+Profiles are stored in `config/aurora/profiles`.
 
-## Оптимизация
+## Performance
 
-Раздел **«Оптимизация»** — модуль, который даёт больше FPS, не меняя игру: дальние мобы, рамки, стойки, голограммы, выпавшие предметы, сундуки, таблички и баннеры не рисуются дальше заданной дистанции (у каждого вида своя), число частиц ограничено, а далёкие частицы не создаются вовсе. Когда окно игры в фоне, FPS снижается до выбранного (по умолчанию 15), чтобы не грузить ПК. Игроки по умолчанию не скрываются, драконы, иссушители и подсвеченные сущности видны всегда.
+The **Performance** category holds the "Render optimizer", a module that gives more FPS without changing the game: distant mobs, item frames, armor stands, holograms, dropped items, chests, signs and banners are not drawn beyond a set distance (each kind has its own), the number of particles is capped, and far-away particles are not created at all. When the game window is in the background, FPS drops to the value you choose (15 by default) so the PC is not loaded. Players are not hidden by default, and dragons, withers and glowing entities are always visible.
 
-**Быстрая настройка** одной кнопкой выставляет и ванильную графику: «Для слабого ПК» (прорисовка 6, без облаков, минимум частиц, быстрая графика), «Баланс» и «Качество».
+**Quick setup** also sets the vanilla graphics in one click: "For a weak PC" (render distance 6, no clouds, minimal particles, fast graphics), "Balanced" and "Quality".
 
-## Редактор HUD
+## HUD editor
 
-Кнопка **«Редактор HUD»** в меню.
+The **HUD Editor** button in the menu.
 
-- Перетаскивайте элементы мышью — они «прилипают» к краям, центру экрана и друг к другу (направляющие подсвечиваются). **Alt** — двигать без привязки.
-- **Колёсико** над элементом — масштаб 50–300 %.
-- **ПКМ** — открыть настройки элемента; **стрелки** — сдвиг на 1 px (с Shift — на 10), **R** — сброс позиции, **Delete** — скрыть элемент.
-- Слева — список всех элементов с переключателями (прокручивается).
-- Позиция хранится относительно ближайшего края, поэтому раскладка сохраняется при смене разрешения и масштаба GUI.
+- Drag elements with the mouse: they snap to the screen edges, the center and each other (the guides light up). **Alt** moves them freely.
+- **Mouse wheel** over an element: scale 50–300 %.
+- **Right click**: the element's settings; **arrow keys**: move by 1 px (by 10 with Shift); **R**: reset the position; **Delete**: hide the element.
+- On the left is a scrollable list of all elements with switches.
+- Positions are kept relative to the nearest edge, so the layout survives a change of resolution and GUI scale.
 
-## Модули
+## Modules
 
-**HUD (20):** FPS (обновляется 4 раза в секунду, по желанию 1% low, график времени кадра и цвет по FPS) · CPS · Клавиши (WASD/мышь/пробел, CPS на кнопках) · Броня (прочность в % или числом, цвет по износу) · **Счётчик предметов** (стрелы, жемчуг, золотые яблоки, тотемы, зелья, фейерверки, блоки, еда и сколько всего предметов как в руке; краснеет, когда мало, и мигает при изменении) · Эффекты (иконки, время, полосы прогресса, мигание перед концом, скрытие ванильных иконок) · Координаты (направление, биом, координаты Незера) · Target HUD (голова, здоровье с «шлейфом» урона, поглощение, броня, индикатор W/L) · Компас-шкала · Пинг · Часы / таймер сессии · Скорость · Дистанция удара · Комбо · Память · Адрес сервера · Статус авто-бега · **Скорборд** · **Полоса босса** · **Список игроков (таб)** · **Чат**.
+**HUD (20):** FPS (updated 4 times a second, optionally with 1% low, a frame time graph and color by FPS) · CPS · Keystrokes (WASD/mouse/space, CPS on the buttons) · Armor Status (durability in % or as a number, colored by wear) · **Item counter** (arrows, pearls, golden apples, totems, potions, fireworks, blocks, food and how many of the held item you have; turns red when low and flashes when it changes) · Potion Effects (icons, time, progress bars, blinking before they end, hiding the vanilla icons) · Coordinates (direction, biome, Nether coordinates) · Target HUD (head, health with a damage "trail", absorption, armor, a W/L indicator) · Compass strip · Ping · Clock / session timer · Speed · Reach Display · Combo Counter · Memory · Server Address · Toggle Sprint status · **Scoreboard** · **Boss Bar** · **Player List** · **Chat**.
 
-**Визуал (16):** **Хитбоксы** · Прицел (6 форм, цвет, обводка, разлёт при движении, подсветка на цели, кольцо перезарядки, **живой предпросмотр** в настройках) · Обводка блока (цвет, толщина, заливка) · Зум (плавный, колёсико, кинематографичная камера, пониженная чувствительность) · Свободный обзор · Полная яркость · Цвет урона · Частицы (множитель, криты и искры остроты на каждом ударе) · Круги прыжка · Китайская шляпа · Шлейф · Время суток (фиксированное или анимированный цикл) · Ясная погода · Вид руки · Хотбар (плавное выделение, стеклянный стиль) · Камера и оверлеи (без тряски от урона, ниже огонь, без тыквы).
+**Visual (16):** **Hitboxes** · Crosshair (6 shapes, color, outline, movement spread, target highlight, a cooldown ring, a **live preview** in its settings) · Block Outline (color, thickness, fill) · Zoom (smooth, mouse wheel, cinematic camera, lower sensitivity) · Freelook · Fullbright · Hit Color · Particles (a multiplier, crits and sharpness sparks on every hit) · Jump Circles · China Hat · Trails · Time Changer (a fixed time or an animated cycle) · Clear Weather · Hand View · Hotbar (smooth selection, glass style) · Camera & Overlays (no hurt shake, lower fire, no pumpkin overlay).
 
-**Утилиты:** Авто-бег (через ванильный режим переключения, поэтому все правила бега сохраняются) · Бинды команд · **Mouse Tweaks** · **Скриншоты** · **Статус в Discord**.
+**Utility:** Toggle Sprint (through the vanilla toggle mode, so every sprinting rule still applies) · Command Binds · **Mouse Tweaks** · **Screenshots** · **Discord status**.
 
-**Оптимизация:** модуль «Оптимизация рендера» (см. выше).
+**Performance:** the "Render optimizer" module (see above).
 
-**Предпросмотр прицела:** в настройках прицела справа маленькая сцена от первого лица, и прицел в ней меняется сразу, пока двигаете ползунки. Фон на выбор — луг, снег, пустыня, пещера, Незер, ночь (настоящие текстуры блоков), чтобы проверить, виден ли прицел везде. Кнопки «Стоя / Шаг / Бег / Прыжок» показывают разлёт при движении. Мимо ходит зомби: когда прицел на нём, видна подсветка цели, а клик по сцене — удар с кольцом перезарядки. Увеличение 1x/2x/4x помогает выставить толщину до пикселя.
+**Crosshair preview:** the crosshair settings show a small first-person scene on the right, and the crosshair in it changes as you move the sliders. The backdrop can be a meadow, snow, desert, cave, the Nether or night (real block textures), so you can check the crosshair is visible everywhere. The "Still / Walk / Sprint / Jump" buttons show the movement spread. A zombie walks past: when the crosshair is on it you see the target highlight, and a click on the scene is a hit with the cooldown ring. 1x/2x/4x zoom helps to set the thickness to the pixel.
 
-**Mouse Tweaks** — перенос оригинального мода Mouse Tweaks, работает во всех инвентарях, включая творческий:
+**Mouse Tweaks** is a port of the original Mouse Tweaks mod and works in every inventory, including creative:
 
-- **Shift + ЛКМ, протянуть по слотам** (курсор пустой) — все стаки, над которыми прошла мышь, переносятся в другую часть экрана, как при Shift-клике.
-- **ЛКМ на стаке и протянуть** по слотам с таким же предметом — они собираются на курсор; с зажатым Shift такие предметы переносятся в другую часть экрана.
-- **ПКМ с предметом на курсоре, протянуть** — в каждый слот на пути кладётся по одному предмету, и при повторном проходе ещё по одному.
-- **Колёсико над стаком** — переносит предметы по одному в другую часть экрана (сундук и инвентарь, хотбар и инвентарь), в обратную сторону — забирает обратно. Над результатом крафта колёсико крафтит и раскладывает готовые предметы.
+- **Shift + left click and drag over slots** (empty cursor): every stack the mouse passes over moves to the other part of the screen, as with a Shift-click.
+- **Left click on a stack and drag** over slots with the same item: they gather on the cursor; with Shift held those items move to the other part of the screen.
+- **Right click with an item on the cursor and drag**: one item goes into every slot on the way, and one more on another pass.
+- **Mouse wheel over a stack**: moves items one by one to the other part of the screen (chest and inventory, hotbar and inventory), and back the other way. Over a crafting result, the wheel crafts and puts the results away.
 
-В настройках модуля каждую функцию можно выключить, а у колёсика выбрать направление (в том числе «к другому инвентарю»), откуда брать предметы и сколько предметов переносить за щелчок. Всё делается обычными кликами, поэтому работает на любом сервере.
+Every feature can be switched off in the module's settings, and the wheel lets you pick the direction (including "to the other inventory"), where items are taken from and how many move per notch. Everything is done with ordinary clicks, so it works on any server.
 
-**Статус в Discord** (Rich Presence): в профиле Discord видно «Играет в Aurora Client» и где вы: в главном меню, выбираете сервер, в одиночной игре, по локальной сети, на Realms или на сервере с его адресом, а ещё измерение и время в игре. У лицензионного аккаунта рядом с логотипом видна голова скина. Под статусом есть кнопка «Скачать Aurora Client»: она ведёт на страницу мода из `homepage` в `fabric.mod.json`. Адрес сервера, название мира, измерение, голову, время и кнопку можно скрыть в настройках модуля. Нужно запущенное приложение Discord на этом же компьютере; если его запустить позже, статус появится сам.
+**Discord status** (Rich Presence): your Discord profile shows "Playing Aurora Client" and where you are: in the title screen, choosing a server, in singleplayer, on LAN, on Realms or on a server with its address, plus the dimension and the time in game. A licensed account also shows its skin's head next to the logo. Under the status there is a "Get Aurora Client" button leading to the mod's page from `homepage` in `fabric.mod.json`. The server address, world name, dimension, head, time and the button can each be hidden in the module's settings. The Discord app has to be running on the same computer; if you start it later, the status appears by itself.
 
-**Скриншоты:** по F2 снимок сразу копируется в буфер обмена (вставляется в Discord или Telegram через Ctrl+V), в углу появляется уведомление с превью, а к сообщению в чате добавляется ссылка на папку.
+**Screenshots:** F2 copies the shot straight to the clipboard (paste it into Discord or Telegram with Ctrl+V), a notification with a preview appears in the corner, and the chat message gets a link to the folder.
 
-**Хитбоксы** — как F3+B, только красиво: рамка или «уголки» с настраиваемой толщиной, мягкая заливка, которая растворяется кверху, направление взгляда и уровень глаз, подсветка сущности под прицелом, цвета по типу (игроки — цвет темы, враждебные мобы — красный, мирные мобы, то есть животные, жители и големы, — зелёный, предметы — жёлтый, снаряды — голубой) или свой цвет. Можно выбрать, у кого показывать, и дальность. Стены закрывают хитбоксы так же, как саму сущность.
+**Hitboxes** are F3+B done nicely: a frame or "corners" with adjustable thickness, a soft fill that fades out towards the top, the look direction and eye level, a highlight for the entity under the crosshair, colors by type (players in the theme color, hostile mobs red, passive mobs — animals, villagers and golems — green, items yellow, projectiles light blue) or your own color. You choose whose hitboxes to show and how far. Walls hide hitboxes just as they hide the entity itself.
 
-**Чат:** строки лежат на одной скруглённой панели, новые сообщения плавно выезжают снизу, поле ввода — стеклянное. У сообщений есть время и голова отправителя (у сообщений игроков и у системных, которые начинаются с ника), одинаковые сообщения подряд схлопываются в «×3». Сообщения, где кто-то написал ваш ник, подсвечиваются акцентной полоской и звучат коротким сигналом. **ПКМ** по сообщению копирует его текст. Ссылки, подсказки при наведении и клики по сообщениям работают как в ванилле.
+**Chat:** lines sit on one rounded panel, new messages slide in from below, and the input field is glass. Messages show the time and the sender's head (for player messages and for system messages that start with a name), and identical messages in a row collapse into "×3". Messages where someone wrote your name are highlighted with an accent bar and play a short sound. A **right click** on a message copies its text. Links, hover text and clicks on messages work as in vanilla.
 
-**Скорборд** стал HUD-элементом: его можно двигать и масштабировать в редакторе HUD, он рисуется в выбранном стиле HUD, а красные цифры очков можно скрыть. **Полоса босса** тоже двигается: полосы плавные, в цвете босса, с делениями для «зубчатых» полос. **Таб** — стеклянная панель с головами игроков, пингом в миллисекундах с цветом по качеству, очками, шапкой и подвалом сервера и счётчиком игроков.
+The **Scoreboard** became a HUD element: you can move and scale it in the HUD editor, it is drawn in the chosen HUD style, and the red score numbers can be hidden. The **Boss Bar** moves too: smooth bars in the boss color, with notches for segmented bars. The **Player List** is a glass panel with player heads, ping in milliseconds colored by quality, scores, the server header and footer, and a player count.
 
-**Тосты** (достижения, рецепты, системные сообщения, музыка, друзья) получили стеклянные карточки с акцентной полоской.
+**Toasts** (advancements, recipes, system messages, music, friends) got glass cards with an accent bar.
 
-**Меню паузы:** кнопки ванильного меню (со всеми их функциями: друзья, ссылки и диалоги сервера, жалобы) собраны в колонку слева под шапкой Aurora, добавлена кнопка «Aurora Mods». Справа — карточки «Мир» или «Сервер» (название, режим, сложность, LAN или адрес, пинг, игроки) и «Сессия» (время в игре, координаты, измерение, FPS), а между ними — модель игрока, которая поворачивается за мышью. Отключается в настройках клиента.
+**Pause menu:** the vanilla menu's buttons (with all their features: friends, server links and dialogs, reports) are gathered in a column on the left under the Aurora header, with an added "Aurora Mods" button. On the right are the "Singleplayer" or "Server" card (name, game mode, difficulty, LAN or address, ping, players) and the "Session" card (time in game, coordinates, dimension, FPS), and between them a player model that follows the mouse. Can be switched off in the client settings.
 
-**Экраны загрузки:** при запуске игры вместо логотипа Mojang — заставка Aurora на фоне анимированной сцены меню с плавной полосой загрузки, которая перетекает прямо в главное меню. Загрузка мира, подключение к серверу, создание мира и короткие ожидания вроде «Сохранение мира» показывают ту же сцену, стеклянную карточку с вращающимся кольцом вокруг логотипа, прогресс (если он известен) и подсказку по Aurora внизу. Отключается в настройках клиента.
+**Loading screens:** at startup, instead of the Mojang logo, an Aurora splash plays over the animated menu scene with a smooth loading bar that flows right into the title screen. Loading a world, joining a server, creating a world and short waits like "Saving world" show the same scene, a glass card with a ring spinning around the logo, the progress (when it is known) and an Aurora tip at the bottom. Can be switched off in the client settings.
 
-## Аккаунты
+## Accounts
 
-Нажмите на карточку профиля в правом верхнем углу главного меню — откроется переключатель аккаунтов. Сменить аккаунт можно без перезапуска игры (только вне мира); выбор запоминается и восстанавливается при следующем запуске.
+Click the profile card in the top right corner of the title screen to open the account switcher. You can switch accounts without restarting the game (outside a world only); the choice is remembered and restored at the next start.
 
-- **Из лаунчера** — аккаунт, с которым запущена игра; к нему всегда можно вернуться. Если игра запущена из Aurora Launcher, при старте используется аккаунт, выбранный в лаунчере, а не тот, что выбирали в игре в прошлый раз.
-- **Без лицензии** — любой ник (3–16 латинских букв, цифр или `_`) для одиночной игры, LAN и серверов без проверки лицензии.
-- **Microsoft** — вход через браузер: Aurora показывает короткий код, вы открываете microsoft.com/link и вводите его, так что пароль Aurora не видит. Для этого нужен **Client ID** приложения Azure: зарегистрируйте приложение на portal.azure.com (личные учётные записи Microsoft, включены *public client flows*) и подайте заявку Mojang на доступ к входу в Minecraft: [aka.ms/mce-reviewappid](https://aka.ms/mce-reviewappid). Client ID вводится один раз при первом нажатии «+ Microsoft». Неодобренные приложения Mojang не пускает, и Aurora так и напишет.
+- **From the launcher**: the account the game was started with; you can always go back to it. When the game is started from Aurora Launcher, the account picked in the launcher wins over the one you picked in game last time.
+- **Offline**: any name (3–16 Latin letters, digits or `_`) for singleplayer, LAN and servers that do not check licenses.
+- **Microsoft**: sign-in through the browser. Aurora shows a short code, you open microsoft.com/link and enter it, so Aurora never sees your password. This needs the **Client ID** of an Azure application: register one on portal.azure.com (personal Microsoft accounts, *public client flows* enabled) and apply to Mojang for access to Minecraft sign-in: [aka.ms/mce-reviewappid](https://aka.ms/mce-reviewappid). The Client ID is entered once, the first time you click "+ Microsoft". Mojang does not let unapproved applications in, and Aurora says so.
 
-При переключении меняется вся сессия: подпись сообщений чата, друзья, жалобы, телеметрия и Realms. Скин офлайн-аккаунта, нарисованный или загруженный в лаунчере, игра показывает на вашем персонаже. Его видите вы: другим игрокам сервер скин офлайн-аккаунта не передаёт. Аккаунты хранятся в `config/aurora/accounts.json`; токены Microsoft в Windows зашифрованы через DPAPI (их может прочитать только ваш пользователь Windows на этом ПК).
+Switching changes the whole session: chat message signing, friends, reports, telemetry and Realms. An offline account's skin painted or uploaded in the launcher is shown on your character in game. Only you see it: servers do not pass offline skins to other players. Accounts are stored in `config/aurora/accounts.json`; on Windows, Microsoft tokens are encrypted with DPAPI (only your Windows user on this PC can read them).
 
-**Главное меню Aurora:** живой анимированный фон, карточка профиля, быстрый доступ к модам. Отключается в настройках клиента.
+**Aurora main menu:** a live animated background, the profile card and quick access to the mods. Can be switched off in the client settings.
 
-**Фон меню** (настройки клиента → «Фон меню») — заменяет вращающуюся панораму во всех меню, на экранах вроде «Одиночной игры» он виден размытым под затемнением:
+**Menu background** (client settings → "Menu background") replaces the rotating panorama in every menu; on screens like "Singleplayer" it shows blurred under a dark overlay:
 
-- **Северное сияние** (по умолчанию) — ночное горное озеро: переливающиеся занавеси сияния, снежные пики, еловый берег, отражения в воде, рябь, туман над водой, мерцающие звёзды, Млечный Путь и падающие звёзды. Цвет сияния слегка подстраивается под тему.
-- **Закат** — тёплый вечер в холмах в духе Firewatch: слои гор в дымке, низкое солнце с лучами, плывущие облака, стая птиц, светлячки и пожарная вышка с горящим окном.
-- **Синтвейв** — ретровейв: солнце в полоску, неоновая сетка, бегущая к зрителю, каркасные горы, качающиеся пальмы и лёгкие VHS-полосы.
-- **Своя картинка** — PNG, JPG, BMP или **анимированный GIF** из папки `config/aurora/backgrounds` (кнопка «Открыть папку» в настройках). Картинка подгоняется под экран, медленно плывёт и приближается (эффект Кена Бёрнса), пиксель-арт остаётся чётким. Несколько файлов — слайд-шоу с плавной сменой каждые ~40 секунд. Новые файлы подхватываются без перезапуска.
-- **Панорама Minecraft** — ванильная панорама.
+- **Northern lights** (the default): a mountain lake at night with shimmering aurora curtains, snowy peaks, a spruce shore, reflections in the water, ripples, mist over the water, twinkling stars, the Milky Way and shooting stars. The aurora's color follows the theme a little.
+- **Sunset**: a warm evening in the hills in the style of Firewatch, with hazy mountain layers, a low sun with rays, drifting clouds, a flock of birds, fireflies and a fire lookout tower with a lit window.
+- **Synthwave**: a retro sun in stripes, a neon grid running towards you, wireframe mountains, swaying palm trees and faint VHS lines.
+- **Your picture**: PNG, JPG, BMP or an **animated GIF** from the `config/aurora/backgrounds` folder (the "Open folder" button in the settings). The picture is fitted to the screen and slowly drifts and zooms (the Ken Burns effect), and pixel art stays crisp. Several files make a slideshow with a smooth change about every 40 seconds. New files are picked up without a restart.
+- **Minecraft panorama**: the vanilla panorama.
 
-Сцены рисуются в реальном времени и не зависят от разрешения. Слои сдвигаются вслед за мышью (параллакс, отключается). Скорость анимации берётся из ванильной настройки «Скорость панорамы» в «Специальных возможностях»: при нуле фон замирает.
+The scenes are drawn in real time and do not depend on the resolution. Their layers follow the mouse (parallax, can be turned off). The animation speed comes from the vanilla "Panorama Scroll Speed" setting in Accessibility: at zero the background stands still.
 
-**Стиль Aurora для меню игры:** «Одиночная игра», «Сетевая игра», настройки, меню паузы и остальные ванильные экраны получают тот же вид: стеклянные кнопки с акцентной подсветкой, скруглённые поля ввода, слайдеры и чекбоксы, карточки миров и серверов, акцентное выделение в списках, тонкие скроллбары, новые подсказки и тёмный фон с мягким свечением. Все функции ванильных экранов работают как прежде — меняется только отрисовка. Отключается в настройках клиента.
+**Aurora style for game menus:** "Singleplayer", "Multiplayer", the options, the pause menu and the other vanilla screens get the same look: glass buttons with an accent glow, rounded input fields, sliders and checkboxes, world and server cards, accent selection in lists, thin scrollbars, new tooltips and a dark background with a soft glow. Every feature of the vanilla screens works as before; only the drawing changes. Can be switched off in the client settings.
 
-**Target HUD** показывает живой 3D-портрет головы моба (любого, включая мобов из других модов), а для игроков — лицо со скина.
+**Target HUD** shows a live 3D portrait of the mob's head (any mob, including mobs from other mods), and a player's face from their skin.
 
-Интерфейс полностью переведён на русский и английский — язык берётся из настроек игры.
+The interface is fully translated into English and Russian; the language follows the game's setting.
 
-## Сборка из исходников
+## Building from source
 
-Нужен JDK 25.
+JDK 25 is required.
 
 ```bash
 ./gradlew build
 ```
 
-Готовый мод: `build/libs/aurora-1.0.0+26.3.jar`. Запуск тестового клиента: `./gradlew runClient`.
+The mod jar: `build/libs/aurora-1.0.0+26.3.jar`. Start a test client with `./gradlew runClient`.
 
-Статус в Discord показывается от имени приложения Discord, чей ID записан в `DiscordModule.APP_ID` (и в `launcher/src/main/defaults.js`, `DISCORD_APP_ID`). Имя приложения — то, что друзья видят после «Играет в», а логотип лежит в его Rich Presence → Art Assets под ключом `aurora` (картинка — `launcher/build/discord-logo.png`).
+The Discord status is shown on behalf of the Discord application whose ID is in `DiscordModule.APP_ID` (and in `launcher/src/main/defaults.js`, `DISCORD_APP_ID`). The application's name is what friends see after "Playing", and the logo lives in its Rich Presence → Art Assets under the key `aurora` (the picture is `launcher/build/discord-logo.png`).
 
-## Выпуск новой версии
+## Releasing a new version
 
-1. Поднимите `mod_version` в `gradle.properties` (например `1.0.1`) и соберите мод: `./gradlew build`.
-2. Загрузите `build/libs/aurora-<версия>+26.3.jar` на [Modrinth](https://modrinth.com/mod/L7X9iCgB) (загрузчик Fabric, версия Minecraft 26.3, только клиент, обязательная зависимость Fabric API) и на CurseForge. Что вписывать в каждое поле — в [`publish/MODRINTH.md`](publish/MODRINTH.md).
-3. Всё: Aurora Launcher раз в час и перед каждым запуском смотрит версии проекта Aurora на Modrinth (по его ID в `launcher/src/main/defaults.js`, `AURORA_MODRINTH`) и сам ставит более новую, если внутри действительно Aurora, поэтому выпускать новый лаунчер ради обновления мода не нужно. Сборка для новой версии Minecraft, выложенная на Modrinth, тоже сразу становится доступна в лаунчере.
+1. Raise `mod_version` in `gradle.properties` (for example `1.0.1`) and build the mod: `./gradlew build`.
+2. Upload `build/libs/aurora-<version>+26.3.jar` to [Modrinth](https://modrinth.com/mod/L7X9iCgB) (Fabric loader, Minecraft 26.3, client only, Fabric API as a required dependency) and to CurseForge. What goes into each field is in [`publish/MODRINTH.md`](publish/MODRINTH.md).
+3. That's it: once an hour and before every launch, Aurora Launcher looks up the versions of the Aurora project on Modrinth (by its ID in `launcher/src/main/defaults.js`, `AURORA_MODRINTH`) and installs a newer one by itself if it really is Aurora inside, so a mod update needs no new launcher. A build for a new Minecraft version published on Modrinth becomes available in the launcher right away too.
 
-Версии с типом «alpha» лаунчер не ставит; «release» и «beta» ставит.
+The launcher skips versions of the "alpha" type and installs "release" and "beta" ones.
 
-## Конфиг
+## Configuration
 
-`config/aurora.json` — состояние модулей, настройки, позиции HUD и бинды команд. `config/aurora/accounts.json` — сохранённые аккаунты. `config/aurora/profiles/` — конфиги, привязки к серверам и резервная копия для «Вернуть как было». Сохраняется при закрытии меню и выходе из игры. Если файл повреждён, Aurora сохранит его копию как `aurora.json.broken` и запустится с настройками по умолчанию.
+`config/aurora.json` holds the module states, settings, HUD positions and command binds. `config/aurora/accounts.json` holds the saved accounts. `config/aurora/profiles/` holds the profiles, their server bindings and the backup for undoing a load. Everything is saved when the menu closes and when the game exits. If the file is damaged, Aurora keeps a copy as `aurora.json.broken` and starts with the default settings.
 
-## Устройство кода
+## Code layout
 
-Лаунчер (Electron) лежит в папке [`launcher`](launcher/README.md) и описан отдельно.
+The launcher (Electron) lives in the [`launcher`](launcher/README.md) folder and is described separately.
 
 ```
 dev.aurora
-├── Aurora.java            точка входа: модули, бинды, HUD-слой, события мира
-├── account/               аккаунты: вход Microsoft (код устройства), хранение, смена сессии
-├── config/                сохранение в JSON (атомарная запись), конфиги и их коды
-├── setting/               типы настроек: bool, число, режим, цвет (с хромой), клавиша
-├── module/                Module, HudModule (позиционирование), ClientSettings
-│   ├── hud/               HUD-элементы
-│   ├── visual/            визуальные модули
-│   ├── utility/           утилиты: авто-бег, бинды команд, Mouse Tweaks, скриншоты
-│   └── performance/       оптимизация рендера
+├── Aurora.java            entry point: modules, binds, the HUD layer, world events
+├── account/               accounts: Microsoft sign-in (device code), storage, session switching
+├── config/                JSON storage (atomic writes), profiles and their share codes
+├── setting/               setting types: boolean, number, mode, color (with chroma), key
+├── module/                Module, HudModule (positioning), ClientSettings
+│   ├── hud/               HUD elements
+│   ├── visual/            visual modules
+│   ├── utility/           utilities: toggle sprint, command binds, Mouse Tweaks, screenshots
+│   └── performance/       the render optimizer
 ├── gui/
-│   ├── background/        фоны меню: сцены, силуэты гор и леса, звёзды, свои картинки и GIF
-│   ├── render/            Render2D (векторные формы с AA), FontRenderer + GlyphAtlas (шрифт Inter), World3D
-│   ├── widget/            переключатель, поле ввода, строки настроек, иконки, предпросмотр прицела
-│   └── screen/            меню модов, редактор HUD, главное меню
-├── skin/                  скины офлайн-аккаунтов из лаунчера
-├── mixin/                 точечные изменения ванильного кода
-└── util/                  анимации, цвета, трекеры CPS и боя, картинки в буфер обмена Windows
+│   ├── background/        menu backgrounds: scenes, mountain and forest silhouettes, stars, your pictures and GIFs
+│   ├── render/            Render2D (anti-aliased vector shapes), FontRenderer + GlyphAtlas (the Inter font), World3D
+│   ├── widget/            switch, text field, setting rows, icons, the crosshair preview
+│   └── screen/            mod menu, HUD editor, title screen
+├── skin/                  offline account skins from the launcher
+├── mixin/                 targeted changes to vanilla code
+└── util/                  animations, colors, CPS and combat trackers, pictures to the Windows clipboard
 ```
 
-Aurora распространяется по лицензии MIT (`LICENSE`). Шрифт Inter распространяется по лицензии SIL Open Font License 1.1 (`assets/aurora/fonts/Inter-OFL.txt`).
+Aurora is distributed under the MIT License (`LICENSE`). The Inter font is distributed under the SIL Open Font License 1.1 (`assets/aurora/fonts/Inter-OFL.txt`).
 
-Модуль Mouse Tweaks перенесён из [Mouse Tweaks](https://github.com/YaLTeR/MouseTweaks) Ивана Молодецких (YaLTeR), BSD 3-Clause License, Copyright (c) 2023, Ivan Molodetskikh. Текст лицензии — в `assets/aurora/licenses/MouseTweaks-LICENSE.txt`.
+The Mouse Tweaks module is ported from [Mouse Tweaks](https://github.com/YaLTeR/MouseTweaks) by Ivan Molodetskikh (YaLTeR), BSD 3-Clause License, Copyright (c) 2023, Ivan Molodetskikh. The license text is in `assets/aurora/licenses/MouseTweaks-LICENSE.txt`.
