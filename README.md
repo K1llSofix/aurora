@@ -80,6 +80,13 @@ Profiles are stored in `config/aurora/profiles`.
 
 The **Performance** category holds the "Render optimizer", a module that gives more FPS without changing the game: distant mobs, item frames, armor stands, holograms, dropped items, chests, signs and banners are not drawn beyond a set distance (each kind has its own), the number of particles is capped, and far-away particles are not created at all. When the game window is in the background, FPS drops to the value you choose (15 by default) so the PC is not loaded. Players are not hidden by default, and dragons, withers and glowing entities are always visible.
 
+**Frames:**
+
+- **Latest frames only** switches the window to mailbox presentation: a finished frame replaces one still waiting for the screen, so the monitor always shows the newest picture. With VSync on, the game is no longer capped at the refresh rate and frames do not queue up behind it (less input lag); with VSync off, the picture no longer tears. It needs the Vulkan graphics API (Video Settings); on OpenGL the line under the switch says so.
+- **Stable frame rate** measures how long frames really take (without the limiter's waiting) and holds the game at the rate even the slowest tenth of frames reaches. The cap drops at once when frames get heavier and rises slowly, so the frame rate stays even instead of jumping up and down.
+
+**Memory:** garbage is collected right after a world has loaded and after leaving one, behind the loading screen, so leftovers of loading are not collected in the middle of a fight. The page also shows which garbage collector the game runs with: Aurora Launcher starts 26.x with ZGC (Mojang's own recommended arguments), whose pauses stay under a millisecond.
+
 **Quick setup** also sets the vanilla graphics in one click: "For a weak PC" (render distance 6, no clouds, minimal particles, fast graphics), "Balanced" and "Quality".
 
 ## HUD editor
@@ -96,9 +103,9 @@ The **HUD Editor** button in the menu.
 
 **HUD (20):** FPS (updated 4 times a second, optionally with 1% low, a frame time graph and color by FPS) · CPS · Keystrokes (WASD/mouse/space, CPS on the buttons) · Armor Status (durability in % or as a number, colored by wear) · **Item counter** (arrows, pearls, golden apples, totems, potions, fireworks, blocks, food and how many of the held item you have; turns red when low and flashes when it changes) · Potion Effects (icons, time, progress bars, blinking before they end, hiding the vanilla icons) · Coordinates (direction, biome, Nether coordinates) · Target HUD (head, health with a damage "trail", absorption, armor, a W/L indicator) · Compass strip · Ping · Clock / session timer · Speed · Reach Display · Combo Counter · Memory · Server Address · Toggle Sprint status · **Scoreboard** · **Boss Bar** · **Player List** · **Chat**.
 
-**Visual (16):** **Hitboxes** · Crosshair (6 shapes, color, outline, movement spread, target highlight, a cooldown ring, a **live preview** in its settings) · Block Outline (color, thickness, fill) · Zoom (smooth, mouse wheel, cinematic camera, lower sensitivity) · Freelook · Fullbright · Hit Color · Particles (a multiplier, crits and sharpness sparks on every hit) · Jump Circles · China Hat · Trails · Time Changer (a fixed time or an animated cycle) · Clear Weather · Hand View · Hotbar (smooth selection, glass style) · Camera & Overlays (no hurt shake, lower fire, no pumpkin overlay).
+**Visual (17):** **Hitboxes** · Crosshair (6 shapes, color, outline, movement spread, target highlight, a cooldown ring, a **live preview** in its settings) · Block Outline (color, thickness, fill) · Zoom (smooth, mouse wheel, cinematic camera, lower sensitivity) · Freelook · Fullbright · Hit Color · Particles (a multiplier, crits and sharpness sparks on every hit) · Jump Circles · China Hat · Trails · Time Changer (a fixed time or an animated cycle) · Clear Weather · Hand View (offset, tilt, turn, roll and size of the held item; mirrored for the left hand) · Hotbar (smooth selection, glass style) · Camera & Overlays (no hurt shake, lower fire, no pumpkin overlay) · **TNT Timer** (seconds until lit TNT explodes, above it, from green to red; walls hide it like the TNT itself).
 
-**Utility:** Toggle Sprint (through the vanilla toggle mode, so every sprinting rule still applies) · Command Binds · **Mouse Tweaks** · **Screenshots** · **Discord status**.
+**Utility:** Toggle Sprint (through the vanilla toggle mode, so every sprinting rule still applies) · Command Binds · **Mouse Tweaks** · **Screenshots** · **Discord status** · **Reconnect** (a "Reconnect" button on the disconnect screen after a kick or a lost connection; optionally reconnects by itself after a delay, at most five times in a row).
 
 **Performance:** the "Render optimizer" module (see above).
 

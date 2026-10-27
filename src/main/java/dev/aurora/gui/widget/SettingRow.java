@@ -24,6 +24,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 
 /** One line in a module's settings page: a label on the left and a control on the right. */
 public abstract class SettingRow {
@@ -758,6 +759,31 @@ public abstract class SettingRow {
 				return true;
 			}
 			return false;
+		}
+	}
+
+	// ======================================================================= info line
+
+	/** A read-only line: a label and a short value on the right, e.g. a status or a measurement. */
+	public static final class Info extends SettingRow {
+		/** What the line says and in which color. */
+		public record Value(String text, int color) {
+		}
+
+		private final Supplier<Value> value;
+
+		public Info(String label, Supplier<Value> value) {
+			super(label, () -> {
+			});
+			this.value = value;
+		}
+
+		@Override
+		protected void renderControl(GuiGraphicsExtractor g, int mx, int my) {
+			Value v = value.get();
+			float room = w - 36 - FontRenderer.MEDIUM.width(label, LABEL_SIZE);
+			String text = FontRenderer.MEDIUM.ellipsize(v.text(), 7.5f, Math.max(40, room));
+			FontRenderer.MEDIUM.drawRight(g, text, x + w - 12, y + HEIGHT / 2f, 7.5f, Ui.c(v.color()));
 		}
 	}
 

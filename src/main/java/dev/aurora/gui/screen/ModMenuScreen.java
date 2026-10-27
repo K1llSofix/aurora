@@ -456,6 +456,11 @@ public final class ModMenuScreen extends Screen {
 		}
 	}
 
+	/** A status line of the performance page: amber when it needs attention, dim otherwise. */
+	private static SettingRow.Info.Value statusValue(PerformanceModule.Status status) {
+		return new SettingRow.Info.Value(status.text(), status.warning() ? Theme.WARNING : Theme.TEXT_DIM);
+	}
+
 	private void closeSettings() {
 		boolean wasOpen = selected != null;
 		selected = null;
@@ -484,10 +489,23 @@ public final class ModMenuScreen extends Screen {
 					openSettings(performance);
 				}));
 			}
+			// Frames and memory: each switch with a line that says what it is doing right now.
+			list.add(new SettingRow.Header(I18n.get("aurora.performance.frames")));
+			list.add(SettingRow.of(performance.latestFrames, changed));
+			list.add(new SettingRow.Info(I18n.get("aurora.performance.present"), () -> statusValue(performance.presentStatus())));
+			list.add(SettingRow.of(performance.stableFrames, changed));
+			list.add(new SettingRow.Info(I18n.get("aurora.performance.pacing"), () -> statusValue(performance.pacingStatus()))
+				.visibleWhen(performance.stableFrames::on));
+			list.add(new SettingRow.Header(I18n.get("aurora.performance.memory")));
+			list.add(SettingRow.of(performance.cleanOnLoading, changed));
+			list.add(new SettingRow.Info(I18n.get("aurora.performance.collector"), () -> statusValue(performance.collectorStatus())));
 		}
 		if (!module.settings().isEmpty()) {
 			list.add(new SettingRow.Header(I18n.get(module instanceof ClientSettings ? "aurora.ui.section.appearance" : "aurora.ui.section.settings")));
 			for (Setting<?> s : module.settings()) {
+				if (module instanceof PerformanceModule performance && performance.shownSeparately(s)) {
+					continue;
+				}
 				list.add(SettingRow.of(s, changed));
 				if (module instanceof ClientSettings client && s == client.menuBackground) {
 					list.add(new SettingRow.Action(I18n.get("aurora.ui.backgrounds_folder"), I18n.get("aurora.ui.open_folder"),

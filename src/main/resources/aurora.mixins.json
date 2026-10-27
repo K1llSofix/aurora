@@ -14,8 +14,10 @@
 		"ChatScreenMixin",
 		"ClientClockInstanceMixin",
 		"ConnectScreenMixin",
+		"DisconnectedScreenMixin",
 		"EntityRenderDispatcherMixin",
 		"FramerateLimitTrackerMixin",
+		"FramerateLimiterMixin",
 		"GameRendererMixin",
 		"GenericMessageScreenMixin",
 		"GuiGraphicsExtractorMixin",
@@ -30,6 +32,8 @@
 		"LightmapExtractorMixin",
 		"LoadingOverlayMixin",
 		"MinecraftAccountAccessor",
+		"MinecraftFrameMixin",
+		"MinecraftSurfaceAccessor",
 		"MouseHandlerMixin",
 		"MultiPlayerGameModeMixin",
 		"OverlayTextureAccessor",
@@ -38,11 +42,13 @@
 		"ParticleEngineMixin",
 		"PauseScreenMixin",
 		"PlayerTabOverlayMixin",
+		"PresentModeMixin",
 		"ProgressScreenMixin",
 		"RealmsClientAccessor",
 		"ScreenEffectRendererMixin",
 		"ScreenshotMixin",
-		"SkinManagerMixin"
+		"SkinManagerMixin",
+		"TntRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

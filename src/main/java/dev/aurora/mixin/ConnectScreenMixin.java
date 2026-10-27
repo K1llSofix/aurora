@@ -2,11 +2,16 @@ package dev.aurora.mixin;
 
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import dev.aurora.gui.screen.LoadingScreens;
+import dev.aurora.module.utility.ReconnectModule;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.client.multiplayer.TransferState;
+import net.minecraft.client.multiplayer.resolver.ServerAddress;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,6 +32,13 @@ public abstract class ConnectScreenMixin extends Screen {
 
 	protected ConnectScreenMixin(Component title) {
 		super(title);
+	}
+
+	/** Every connection attempt is remembered for the "Reconnect" button. */
+	@Inject(method = "startConnecting", at = @At("HEAD"))
+	private static void aurora$remember(Screen parent, Minecraft minecraft, ServerAddress address, ServerData data, boolean quickPlay,
+		@Nullable TransferState transfer, CallbackInfo ci) {
+		ReconnectModule.remember(address, data);
 	}
 
 	@WrapWithCondition(method = "extractRenderState", at = @At(value = "INVOKE",

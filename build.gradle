@@ -13,6 +13,11 @@ loom {
 	runs {
 		client {
 			programArgs '--username', 'AuroraDev'
+			// ./gradlew runClient -PquickPlay=host:port joins a server right away (an unreachable
+			// one shows the disconnect screen).
+			if (project.hasProperty('quickPlay')) {
+				programArgs '--quickPlayMultiplayer', project.property('quickPlay')
+			}
 		}
 	}
 }

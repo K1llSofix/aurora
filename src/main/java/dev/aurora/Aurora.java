@@ -34,6 +34,7 @@ import dev.aurora.module.hud.TargetHud;
 import dev.aurora.module.performance.PerformanceModule;
 import dev.aurora.module.utility.CommandBindsModule;
 import dev.aurora.module.utility.DiscordModule;
+import dev.aurora.module.utility.ReconnectModule;
 import dev.aurora.module.utility.MouseTweaksModule;
 import dev.aurora.module.utility.ScreenshotsModule;
 import dev.aurora.module.utility.ToggleSprintModule;
@@ -45,6 +46,7 @@ import dev.aurora.module.visual.FullbrightModule;
 import dev.aurora.module.visual.HandViewModule;
 import dev.aurora.module.visual.HitColorModule;
 import dev.aurora.module.visual.HitboxesModule;
+import dev.aurora.module.visual.TntTimerModule;
 import dev.aurora.module.visual.HotbarModule;
 import dev.aurora.module.visual.JumpCirclesModule;
 import dev.aurora.module.visual.OverlaysModule;
@@ -163,12 +165,14 @@ public final class Aurora implements ClientModInitializer {
 		modules.register(new HotbarModule());
 		modules.register(new OverlaysModule());
 		modules.register(new HitboxesModule());
+		modules.register(new TntTimerModule());
 		// Utility
 		modules.register(new ToggleSprintModule());
 		modules.register(new CommandBindsModule());
 		modules.register(new MouseTweaksModule());
 		modules.register(new ScreenshotsModule());
 		modules.register(new DiscordModule());
+		modules.register(new ReconnectModule());
 		// Performance
 		modules.register(new PerformanceModule());
 	}
