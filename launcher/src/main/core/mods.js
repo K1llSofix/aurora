@@ -98,6 +98,7 @@ class Mods {
   constructor({ bundledDir, auroraProject = null, cacheDir = null }) {
     this.bundledDir = bundledDir;
     this.infoCache = new Map();
+    this.hashCache = new Map();
     this.fabricApiCache = new Map();
     // Aurora builds published on Modrinth, remembered between starts so offline launches and the
     // version lists still know about them.
@@ -143,13 +144,15 @@ class Mods {
     return best;
   }
 
-  /** SHA-1 of the bundled jar, remembered until the file changes. */
-  async bundledSha1(bundled) {
-    const key = `${bundled.path}:${bundled.size}:${bundled.mtime}`;
-    if (!this.bundledHash || this.bundledHash.key !== key) {
-      this.bundledHash = { key, sha1: await net.sha1File(bundled.path) };
-    }
-    return this.bundledHash.sha1;
+  /** SHA-1 of a jar, remembered until the file changes. */
+  async sha1(file, stat) {
+    const key = `${file}|${stat.size}|${stat.mtimeMs}`;
+    if (!this.hashCache.has(key)) this.hashCache.set(key, await net.sha1File(file));
+    return this.hashCache.get(key);
+  }
+
+  bundledSha1(bundled) {
+    return this.sha1(bundled.path, { size: bundled.size, mtimeMs: bundled.mtime });
   }
 
   /**
@@ -200,6 +203,50 @@ class Mods {
       if (!best || compareVersions(modVersion(v.version), modVersion(best.version)) > 0) best = { source: 'modrinth', ...v };
     }
     return best;
+  }
+
+  /**
+   * The newest Aurora jar in an installation's mods folder that the launcher did not put there
+   * itself (it remembers the SHA-1 of its own), e.g. a build copied in by hand to try it out.
+   */
+  async localAurora(gameDir, mc, meta) {
+    const dir = path.join(gameDir, 'mods');
+    let names = [];
+    try {
+      names = await fsp.readdir(dir);
+    } catch {
+      return null;
+    }
+    let best = null;
+    for (const name of names) {
+      if (!/\.jar$/i.test(name)) continue;
+      const file = path.join(dir, name);
+      let stat;
+      try {
+        stat = await fsp.stat(file);
+      } catch {
+        continue;
+      }
+      const info = this.info(file, stat);
+      if (info.id !== 'aurora' || !supports(info.minecraft, mc)) continue;
+      if (meta.auroraSha1 && (await this.sha1(file, stat)) === meta.auroraSha1) continue;
+      if (!best || compareVersions(modVersion(info.version), modVersion(best.version)) > 0) {
+        best = { source: 'local', file: name, version: info.version };
+      }
+    }
+    return best;
+  }
+
+  /**
+   * The Aurora an installation runs: the launcher's own build (or a newer one from Modrinth), unless
+   * its mods folder holds one put there by hand. Development builds keep their version number, so
+   * that one stays until the launcher has a newer version.
+   */
+  async auroraIn(gameDir, mc, meta = readMeta(gameDir)) {
+    const known = this.auroraFor(mc);
+    const local = await this.localAurora(gameDir, mc, meta);
+    if (local && (!known || compareVersions(modVersion(local.version), modVersion(known.version)) >= 0)) return local;
+    return known;
   }
 
   /** Whether a jar really is Aurora (by the id in its fabric.mod.json, not by its name). */
@@ -327,17 +374,24 @@ class Mods {
       return { files, finish: async () => {} };
     }
     if (inst.aurora) await this.refreshAurora().catch(() => {});
-    const aurora = inst.aurora ? this.auroraFor(mc) : null;
+    const aurora = inst.aurora ? await this.auroraIn(gameDir, mc, meta) : null;
     if (aurora) {
       const target = path.join(dir, aurora.file);
       let fresh;
+      // The launcher's own build, remembered to tell it apart from one put there by hand.
+      let sha1 = null;
       if (aurora.source === 'modrinth') {
         // A newer build from Modrinth: downloaded and checked like every other file.
-        fresh = await net.fileMatches(target, { size: aurora.size, sha1: aurora.sha1 }, true);
-        if (!fresh) files.push({ url: aurora.url, path: target, sha1: aurora.sha1, size: aurora.size });
-      } else {
+        sha1 = aurora.sha1;
+        fresh = await net.fileMatches(target, { size: aurora.size, sha1 }, true);
+        if (!fresh) files.push({ url: aurora.url, path: target, sha1, size: aurora.size });
+      } else if (aurora.source === 'bundled') {
         // Development builds keep their version number, so compare the contents, not just the size.
-        fresh = await net.fileMatches(target, { size: aurora.size, sha1: await this.bundledSha1(aurora) }, true);
+        sha1 = await this.bundledSha1(aurora);
+        fresh = await net.fileMatches(target, { size: aurora.size, sha1 }, true);
+      } else {
+        // A build put there by hand: it stays as it is.
+        fresh = true;
       }
       steps.push(async () => {
         await fsp.mkdir(dir, { recursive: true });
@@ -350,6 +404,7 @@ class Mods {
             const bundled = this.bundled();
             if (!bundled || !supports(bundled.minecraft, mc)) return;
             file = bundled.file;
+            sha1 = await this.bundledSha1(bundled);
             await fsp.copyFile(bundled.path, path.join(dir, file));
           }
         } else if (!fresh) {
@@ -365,6 +420,7 @@ class Mods {
         const kept = path.join(dir, file);
         if (fs.existsSync(`${kept}.disabled`)) await fsp.rm(`${kept}.disabled`, { force: true });
         meta.managed.aurora = file;
+        if (sha1) meta.auroraSha1 = sha1;
       });
     } else if (meta.managed.aurora && !inst.aurora) {
       const old = meta.managed.aurora;
@@ -372,6 +428,7 @@ class Mods {
         await fsp.rm(path.join(dir, old), { force: true });
         await fsp.rm(path.join(dir, `${old}.disabled`), { force: true });
         delete meta.managed.aurora;
+        delete meta.auroraSha1;
       });
     }
 

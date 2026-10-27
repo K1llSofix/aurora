@@ -702,7 +702,7 @@ function validIcon(icon) {
 
 async function installInfo(inst) {
   const gameDir = gameDirOf(inst);
-  const aurora = inst.aurora ? mods.auroraFor(inst.version) : null;
+  const aurora = inst.aurora ? await mods.auroraIn(gameDir, inst.version) : null;
   return {
     ...inst,
     gameDir,

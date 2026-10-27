@@ -38,7 +38,7 @@ The easiest way to play with Aurora is the launcher installer from the [releases
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) **0.19.5+** for Minecraft **26.3**.
 2. Put into the `mods` folder:
-   - `aurora-1.0.0+26.3.jar` (from `build/libs/` after a build, or from Modrinth);
+   - `aurora-<version>+26.3.jar` (from `build/libs/` after a build, or from Modrinth);
    - [Fabric API](https://modrinth.com/mod/fabric-api) **0.164.0+26.3** or newer.
 3. Java 25 is required (the official launcher installs it for 26.x).
 
@@ -172,7 +172,7 @@ JDK 25 is required.
 ./gradlew build
 ```
 
-The mod jar: `build/libs/aurora-1.0.0+26.3.jar`. Start a test client with `./gradlew runClient`.
+The mod jar: `build/libs/aurora-<version>+26.3.jar`. Start a test client with `./gradlew runClient`.
 
 The Discord status is shown on behalf of the Discord application whose ID is in `DiscordModule.APP_ID` (and in `launcher/src/main/defaults.js`, `DISCORD_APP_ID`). The application's name is what friends see after "Playing", and the logo lives in its Rich Presence → Art Assets under the key `aurora` (the picture is `launcher/build/discord-logo.png`).
 
