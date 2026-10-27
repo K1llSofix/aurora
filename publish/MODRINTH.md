@@ -135,6 +135,23 @@ First public release of Aurora for Minecraft 26.3.
 2. Загрузите новый jar как новую версию: Version number `1.0.1+26.3`, свой changelog, остальное как выше.
 3. Aurora Launcher найдёт её сам (раз в час и перед каждым запуском) и поставит игрокам. Новый установщик лаунчера для этого не нужен.
 
+### 1.0.1
+
+Файл `build/libs/aurora-1.0.1+26.3.jar`, **Version number** `1.0.1+26.3`, остальные поля как у 1.0.0. Полный список изменений — в [CHANGELOG.md](../CHANGELOG.md).
+
+**Changelog**
+
+```
+New in Aurora 1.0.1 for Minecraft 26.3:
+
+- TNT Timer: the seconds left until lit TNT explodes, right above it, from green to red; walls hide it
+- Reconnect: a button on the disconnect screen to rejoin the server, or rejoin by itself with a countdown
+- Render optimizer: "Latest frames only" (Vulkan) for less input lag without tearing, "Stable frame rate" for even frame times, memory cleanup behind loading screens
+- Hand View: tilt, turn and roll the item in your hand
+
+Новое в Aurora 1.0.1: таймер TNT над подожжённым блоком, кнопка переподключения после кика или обрыва связи (можно автоматически), «Только актуальные кадры» и «Стабилизация кадров» в оптимизации рендера, очистка памяти за экранами загрузки и поворот предмета в руке.
+```
+
 ---
 
 ## CurseForge

@@ -1,6 +1,6 @@
 # Aurora Client — visuals and HUD for Minecraft 26.3
 
-**[Download Aurora Launcher](https://github.com/K1llSofix/aurora/releases/latest)** · [Aurora Client on Modrinth](https://modrinth.com/mod/L7X9iCgB)
+**[Download Aurora Launcher](https://github.com/K1llSofix/aurora/releases/latest)** · [Aurora Client on Modrinth](https://modrinth.com/mod/L7X9iCgB) · [Changelog](CHANGELOG.md)
 
 A client mod for **Fabric** in the spirit of Lunar Client and LabyMod: a searchable, themed mod menu, a draggable HUD, a crosshair editor with a live preview, zoom, freelook, cosmetics like jump circles and trails, its own title screen, pause menu, chat, player list and loading screens, **profiles** (PvP, survival, your own) that switch automatically per server, an **optimizer** for weak PCs, Mouse Tweaks, screenshots straight to the clipboard, a Discord status, command binds and account switching right in the game. The whole interface is drawn as vector shapes (anti-aliased rounded corners, soft shadows) and text uses the Inter font with an atlas for the current GUI scale, so it stays sharp at any window size.
 
@@ -178,7 +178,7 @@ The Discord status is shown on behalf of the Discord application whose ID is in 
 
 ## Releasing a new version
 
-1. Raise `mod_version` in `gradle.properties` (for example `1.0.1`) and build the mod: `./gradlew build`.
+1. Raise `mod_version` in `gradle.properties` (for example `1.0.1`), write down what changed in [`CHANGELOG.md`](CHANGELOG.md) and build the mod: `./gradlew build`.
 2. Upload `build/libs/aurora-<version>+26.3.jar` to [Modrinth](https://modrinth.com/mod/L7X9iCgB) (Fabric loader, Minecraft 26.3, client only, Fabric API as a required dependency) and to CurseForge. What goes into each field is in [`publish/MODRINTH.md`](publish/MODRINTH.md).
 3. That's it: once an hour and before every launch, Aurora Launcher looks up the versions of the Aurora project on Modrinth (by its ID in `launcher/src/main/defaults.js`, `AURORA_MODRINTH`) and installs a newer one by itself if it really is Aurora inside, so a mod update needs no new launcher. A build for a new Minecraft version published on Modrinth becomes available in the launcher right away too.
 
