@@ -15,6 +15,7 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.util.Util;
 import net.minecraft.world.item.Items;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.sdl.SDLProperties;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -144,10 +146,26 @@ public final class ScreenshotsModule extends Module {
 		return properties == 0 ? 0 : SDLProperties.SDL_GetPointerProperty(properties, SDLVideo.SDL_PROP_WINDOW_WIN32_HWND_POINTER, 0L);
 	}
 
-	/** Opens the screenshots folder (used by the menu). */
+	public static File folder() {
+		return new File(mc.gameDirectory, "screenshots");
+	}
+
+	/** Opens the screenshots folder (used by the menu and the gallery). */
 	public static void openFolder() {
-		File dir = new File(mc.gameDirectory, "screenshots");
+		File dir = folder();
 		dir.mkdirs();
 		Blaze3D.openPath(dir.toPath());
+	}
+
+	/** Copies a saved screenshot to the clipboard; the file is read off the render thread. */
+	public static void copyToClipboard(File file, Consumer<Boolean> done) {
+		CompletableFuture.supplyAsync(() -> {
+			try (InputStream in = Files.newInputStream(file.toPath()); NativeImage image = NativeImage.read(in)) {
+				return WinClipboard.bitmap(image);
+			} catch (Exception e) {
+				LOGGER.warn("Could not read screenshot {}", file, e);
+				return null;
+			}
+		}, Util.nonCriticalIoPool()).thenAcceptAsync(bitmap -> done.accept(bitmap != null && WinClipboard.put(nativeWindow(), bitmap)), mc);
 	}
 }

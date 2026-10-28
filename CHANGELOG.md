@@ -2,6 +2,33 @@
 
 What changed in each version of the Aurora mod. [Aurora Launcher](launcher/README.md) has version numbers of its own and installs the newest Aurora by itself.
 
+## 1.1.0 — 2026-10-28
+
+For Minecraft 26.3, Fabric Loader 0.19.5+ and Fabric API 0.164.0+26.3 or newer.
+
+### HUD
+
+- **Item Cooldowns.** Seconds left on your ender pearls, wind charges, chorus fruit and a shield an axe knocked out of use, with a bar; vanilla only shades the hotbar slot. Horizontal or vertical, tenths of a second on or off.
+- **Pickups.** "+16 Cobblestone" slides in at the side when you pick something up; more of the same adds up in one row, and the row fades after a few seconds (2–10).
+- **Saturation** (on by default). Your hidden saturation as a golden line under the hunger bar, and while you hold food, the shanks it would fill blink softly.
+- **Server TPS.** The server's tick rate, worked out from its time updates (asked directly in singleplayer). Next to the ping it tells server lag from your own.
+
+### Visual
+
+- **Northern Lights** (on by default). Slow curtains of green light fading to violet over the northern horizon at night, drawn with the sky itself, so every block stands in front of them and the stars shine through. Not by day, not in the rain. Natural or theme colours, brightness and speed.
+- **Item Physics.** Dropped items lie on the ground instead of hovering and spinning: ingots and tools on their side, blocks standing, each turned its own way. They tumble while they fly and drift in water.
+- **Motion Blur.** Fast turns leave a soft trail, 10 to 90 %. It is a post effect of the game applied to the world only, so the HUD and menus stay sharp.
+- **Name Tags.** A dark glass background tinted with the theme (or vanilla, or none), its opacity and size, and your own name over your head in third person. A team that hides names still wins.
+- **Camera & Overlays:** a lower shield in first person, and a smaller or hidden totem animation.
+
+### Utility
+
+- **Smart Tooltips** (on by default). A shulker box shows what is inside as a grid of slots in its colour, a filled map shows its picture, food shows how much hunger and saturation it restores, and a worn tool shows its durability.
+- **Inventory Search** (on by default). A search box above every chest and inventory; Ctrl+F jumps into it. Matching items glow and the rest dim, also by what is inside shulker boxes and bundles. It only highlights, nothing is moved for you.
+- **Waypoints** (on by default). **B** puts a point where you stand: a soft beam and its name with the distance, seen from afar. The place you died is marked by itself. Rename, recolour, hide or delete them in "Waypoints of this world". They are your own coordinates and show nothing about other players.
+- **Chat:** Ctrl+F in the open chat searches it; the chat shows only matching messages and counts them.
+- **Screenshots:** a gallery of all your screenshots with copy to clipboard, the folder and delete.
+
 ## 1.0.1 — 2026-10-27
 
 For Minecraft 26.3, Fabric Loader 0.19.5+ and Fabric API 0.164.0+26.3 or newer.

@@ -4,7 +4,9 @@ import com.mojang.authlib.GameProfile;
 import dev.aurora.Aurora;
 import dev.aurora.gui.Notifications;
 import dev.aurora.gui.Theme;
+import dev.aurora.gui.render.FontRenderer;
 import dev.aurora.gui.render.Render2D;
+import dev.aurora.gui.widget.Ui;
 import dev.aurora.module.Category;
 import dev.aurora.module.Module;
 import dev.aurora.setting.BooleanSetting;
@@ -55,6 +57,7 @@ public final class ChatModule extends Module {
 	public final BooleanSetting copy = add(new BooleanSetting("copy", true));
 	public final BooleanSetting mentions = add(new BooleanSetting("mentions", true));
 	public final BooleanSetting mentionSound = add(new BooleanSetting("mention_sound", true)).visibleWhen(mentions::on);
+	public final BooleanSetting search = add(new BooleanSetting("search", true));
 
 	/** The vanilla chat's private lists, exposed by a mixin. */
 	public interface Access {
@@ -85,6 +88,13 @@ public final class ChatModule extends Module {
 	private static int recordScreenHeight;
 	private static @Nullable GuiGraphicsExtractor recordGraphics;
 	private static final List<float[]> LINES = new ArrayList<>();
+
+	private static boolean searching;
+	private static String query = "";
+	private static @Nullable List<GuiMessage.Line> found;
+	private static @Nullable List<GuiMessage.Line> foundFrom;
+	private static int foundFromSize = -1;
+	private static GuiMessage.@Nullable Line foundFromFirst;
 
 	public ChatModule() {
 		super("chat", Category.HUD, Items.WRITABLE_BOOK, true);
@@ -376,6 +386,68 @@ public final class ChatModule extends Module {
 		}
 	}
 
+	// ======================================================================= search
+
+	/** Whether Ctrl+F in the open chat searches its messages. */
+	public static boolean searchAvailable() {
+		ChatModule chat = active();
+		return chat != null && chat.search.on();
+	}
+
+	public static boolean searching() {
+		return searching && searchAvailable();
+	}
+
+	public static void setSearching(boolean on) {
+		searching = on;
+		setQuery("");
+	}
+
+	/** The text typed while searching; scrolls back to the newest match when it changes. */
+	public static void setQuery(String text) {
+		String q = text.trim().toLowerCase(Locale.ROOT);
+		if (!q.equals(query)) {
+			query = q;
+			found = null;
+			Minecraft.getInstance().gui.hud.getChat().resetChatScroll();
+		}
+	}
+
+	/** The chat lines to show: all of them, or while searching only those of matching messages. */
+	public static List<GuiMessage.Line> visibleLines(List<GuiMessage.Line> all) {
+		if (!searching() || query.isEmpty()) {
+			return all;
+		}
+		GuiMessage.Line first = all.isEmpty() ? null : all.getFirst();
+		if (found == null || foundFrom != all || foundFromSize != all.size() || foundFromFirst != first) {
+			List<GuiMessage.Line> lines = new ArrayList<>();
+			for (GuiMessage.Line line : all) {
+				String text = ORIGINALS.getOrDefault(line.parent(), line.parent().content().getString());
+				if (text.toLowerCase(Locale.ROOT).contains(query)) {
+					lines.add(line);
+				}
+			}
+			found = lines;
+			foundFrom = all;
+			foundFromSize = all.size();
+			foundFromFirst = first;
+		}
+		return found;
+	}
+
+	/** How many messages match, for the badge in the input bar. */
+	private static int matchCount() {
+		if (found == null) {
+			return 0;
+		}
+		Set<GuiMessage> messages = Collections.newSetFromMap(new IdentityHashMap<>());
+		for (GuiMessage.Line line : found) {
+			messages.add(line.parent());
+		}
+		return messages.size();
+	}
+
+
 	/** The chat input bar as a glass field; returns false to let vanilla draw it. */
 	public static boolean drawInputBar(GuiGraphicsExtractor g, int x0, int y0, int x1, int y1) {
 		if (active() == null) {
@@ -384,8 +456,16 @@ public final class ChatModule extends Module {
 		float w = x1 - x0;
 		float h = y1 - y0;
 		Render2D.roundRect(g, x0, y0, w, h, 4, Render2D.Paint.vertical(y0, h, 0xEB171A23, 0xEB0E1016));
-		Render2D.roundOutline(g, x0, y0, w, h, 4, 0.6f, Render2D.Paint.horizontal(x0, w,
-			ColorUtil.fade(Theme.accent(), 0.6f), ColorUtil.fade(Theme.accent2(), 0.25f)));
+		Render2D.roundOutline(g, x0, y0, w, h, 4, searching() ? 1f : 0.6f, Render2D.Paint.horizontal(x0, w,
+			ColorUtil.fade(Theme.accent(), searching() ? 1f : 0.6f), ColorUtil.fade(Theme.accent2(), searching() ? 0.7f : 0.25f)));
+		if (searching()) {
+			// A magnifier and how many messages match, at the right end of the bar.
+			String count = query.isEmpty() ? I18n.get("aurora.chat.search_label") : I18n.get("aurora.chat.search_found", matchCount());
+			float tw = FontRenderer.MEDIUM.width(count, 7.5f);
+			float cy = y0 + h / 2f;
+			FontRenderer.MEDIUM.drawMiddle(g, count, x1 - 6 - tw, cy, 7.5f, Theme.TEXT_DIM);
+			Ui.iconSearch(g, x1 - 14 - tw, cy, 8, Theme.accent());
+		}
 		return true;
 	}
 }

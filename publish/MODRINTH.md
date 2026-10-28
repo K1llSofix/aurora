@@ -152,6 +152,28 @@ New in Aurora 1.0.1 for Minecraft 26.3:
 Новое в Aurora 1.0.1: таймер TNT над подожжённым блоком, кнопка переподключения после кика или обрыва связи (можно автоматически), «Только актуальные кадры» и «Стабилизация кадров» в оптимизации рендера, очистка памяти за экранами загрузки и поворот предмета в руке.
 ```
 
+### 1.1.0
+
+Файл `build/libs/aurora-1.1.0+26.3.jar`, **Version number** `1.1.0+26.3`, остальные поля как у 1.0.0. Полный список изменений — в [CHANGELOG.md](../CHANGELOG.md).
+
+**Changelog**
+
+```
+New in Aurora 1.1.0 for Minecraft 26.3:
+
+- Northern Lights: slow curtains of light in the night sky over the north
+- Item Physics: dropped items lie on the ground instead of spinning
+- Motion Blur, and Name Tags in the client's style with your own name in F5
+- HUD: item cooldowns in seconds, picked-up items, saturation under the hunger bar, server TPS
+- Smart Tooltips: shulker box contents as a grid, map pictures, food values, durability
+- Inventory Search: a search box over chests that lights up matching items
+- Waypoints with beams and distance; the place you died is marked by itself
+- Chat search with Ctrl+F and a gallery of your screenshots
+- Lower shield and a smaller totem animation
+
+Новое в Aurora 1.1.0: северное сияние в ночном небе, физика выброшенных предметов, размытие в движении, ники в стиле клиента и свой ник в F5, кулдауны предметов, подобранные предметы, насыщение и TPS сервера в HUD, содержимое шалкера и карта в подсказках, поиск в инвентаре, метки с точкой смерти, поиск по чату, галерея скриншотов, низкий щит и маленький тотем.
+```
+
 ---
 
 ## CurseForge

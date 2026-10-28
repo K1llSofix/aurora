@@ -22,6 +22,7 @@ import dev.aurora.module.Module;
 import dev.aurora.module.performance.PerformanceModule;
 import dev.aurora.module.utility.CommandBindsModule;
 import dev.aurora.module.utility.ScreenshotsModule;
+import dev.aurora.module.utility.WaypointsModule;
 import dev.aurora.module.visual.CrosshairModule;
 import dev.aurora.setting.Setting;
 import dev.aurora.util.Animation;
@@ -328,7 +329,8 @@ public final class ModMenuScreen extends Screen {
 		String q = search.value().trim().toLowerCase(Locale.ROOT);
 		List<BindRow.Bind> all = new ArrayList<>();
 		List<SettingRow> list = new ArrayList<>();
-		List<BindRow.Bind> controls = List.of(BindRow.of(Aurora.menuKey), BindRow.of(Aurora.zoomKey), BindRow.of(Aurora.freelookKey));
+		List<BindRow.Bind> controls = List.of(BindRow.of(Aurora.menuKey), BindRow.of(Aurora.zoomKey), BindRow.of(Aurora.freelookKey),
+			BindRow.of(Aurora.waypointKey));
 		all.addAll(controls);
 		Map<Category, List<BindRow.Bind>> byCategory = new java.util.LinkedHashMap<>();
 		for (Category c : new Category[]{Category.HUD, Category.VISUAL, Category.UTILITY, Category.PERFORMANCE}) {
@@ -514,7 +516,13 @@ public final class ModMenuScreen extends Screen {
 			}
 		}
 		if (module instanceof ScreenshotsModule) {
+			list.add(new SettingRow.Action(I18n.get("aurora.gallery.row"), I18n.get("aurora.gallery.open"),
+				() -> minecraft.gui.setScreen(new GalleryScreen(this))));
 			list.add(new SettingRow.Action(I18n.get("aurora.screenshot.folder_row"), I18n.get("aurora.ui.open_folder"), ScreenshotsModule::openFolder));
+		}
+		if (module instanceof WaypointsModule waypoints) {
+			list.add(new SettingRow.Action(I18n.get("aurora.waypoints.row"), I18n.get("aurora.waypoints.open"),
+				() -> minecraft.gui.setScreen(new WaypointsScreen(this, waypoints))).visibleWhen(() -> minecraft.level != null));
 		}
 		if (module instanceof CommandBindsModule) {
 			list.add(new SettingRow.Action(I18n.get("aurora.ui.binds.commands"), I18n.get("aurora.ui.binds.open"), () -> {

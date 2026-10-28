@@ -17,27 +17,35 @@ import dev.aurora.module.hud.ChatModule;
 import dev.aurora.module.hud.ClockHud;
 import dev.aurora.module.hud.ComboHud;
 import dev.aurora.module.hud.CompassHud;
+import dev.aurora.module.hud.CooldownsHud;
 import dev.aurora.module.hud.CoordinatesHud;
 import dev.aurora.module.hud.CpsHud;
 import dev.aurora.module.hud.FpsHud;
 import dev.aurora.module.hud.ItemCounterHud;
 import dev.aurora.module.hud.KeystrokesHud;
 import dev.aurora.module.hud.MemoryHud;
+import dev.aurora.module.hud.PickupsHud;
 import dev.aurora.module.hud.PingHud;
 import dev.aurora.module.hud.PotionHud;
 import dev.aurora.module.hud.ReachHud;
+import dev.aurora.module.hud.SaturationModule;
 import dev.aurora.module.hud.ScoreboardHud;
 import dev.aurora.module.hud.ServerHud;
 import dev.aurora.module.hud.SpeedHud;
 import dev.aurora.module.hud.TabListModule;
 import dev.aurora.module.hud.TargetHud;
+import dev.aurora.module.hud.TpsHud;
 import dev.aurora.module.performance.PerformanceModule;
 import dev.aurora.module.utility.CommandBindsModule;
 import dev.aurora.module.utility.DiscordModule;
-import dev.aurora.module.utility.ReconnectModule;
+import dev.aurora.module.utility.InventorySearchModule;
 import dev.aurora.module.utility.MouseTweaksModule;
+import dev.aurora.module.utility.ReconnectModule;
 import dev.aurora.module.utility.ScreenshotsModule;
 import dev.aurora.module.utility.ToggleSprintModule;
+import dev.aurora.module.utility.TooltipsModule;
+import dev.aurora.module.utility.WaypointsModule;
+import dev.aurora.module.visual.AuroraSkyModule;
 import dev.aurora.module.visual.BlockOutlineModule;
 import dev.aurora.module.visual.ChinaHatModule;
 import dev.aurora.module.visual.CrosshairModule;
@@ -46,30 +54,36 @@ import dev.aurora.module.visual.FullbrightModule;
 import dev.aurora.module.visual.HandViewModule;
 import dev.aurora.module.visual.HitColorModule;
 import dev.aurora.module.visual.HitboxesModule;
-import dev.aurora.module.visual.TntTimerModule;
 import dev.aurora.module.visual.HotbarModule;
+import dev.aurora.module.visual.ItemPhysicsModule;
 import dev.aurora.module.visual.JumpCirclesModule;
+import dev.aurora.module.visual.MotionBlurModule;
+import dev.aurora.module.visual.NametagsModule;
 import dev.aurora.module.visual.OverlaysModule;
 import dev.aurora.module.visual.ParticlesModule;
 import dev.aurora.module.visual.TimeChangerModule;
+import dev.aurora.module.visual.TntTimerModule;
 import dev.aurora.module.visual.TrailsModule;
 import dev.aurora.module.visual.WeatherModule;
 import dev.aurora.module.visual.ZoomModule;
 import dev.aurora.util.CombatTracker;
+import dev.aurora.util.ServerTps;
 import dev.aurora.util.Session;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
-import net.minecraft.world.phys.Vec3;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.ClientTooltipComponentCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 
 public final class Aurora implements ClientModInitializer {
@@ -84,6 +98,7 @@ public final class Aurora implements ClientModInitializer {
 	public static KeyMapping menuKey;
 	public static KeyMapping zoomKey;
 	public static KeyMapping freelookKey;
+	public static KeyMapping waypointKey;
 
 	public static Identifier id(String path) {
 		return Identifier.fromNamespaceAndPath(MOD_ID, path);
@@ -114,6 +129,7 @@ public final class Aurora implements ClientModInitializer {
 		menuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.aurora.menu", InputConstants.KEY_RSHIFT, KEY_CATEGORY));
 		zoomKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.aurora.zoom", InputConstants.KEY_C, KEY_CATEGORY));
 		freelookKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.aurora.freelook", InputConstants.KEY_LALT, KEY_CATEGORY));
+		waypointKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.aurora.waypoint", InputConstants.KEY_B, KEY_CATEGORY));
 
 		registerRendering();
 
@@ -121,7 +137,10 @@ public final class Aurora implements ClientModInitializer {
 		ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> config.save());
 		ClientLifecycleEvents.CLIENT_STARTED.register(AccountManager::init);
 		// Profiles bound to a server switch in on joining it and back out on leaving.
-		ClientPlayConnectionEvents.JOIN.register((handler, sender, mc) -> mc.execute(() -> Profiles.onJoin(mc)));
+		ClientPlayConnectionEvents.JOIN.register((handler, sender, mc) -> mc.execute(() -> {
+			ServerTps.reset();
+			Profiles.onJoin(mc);
+		}));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> mc.execute(Profiles::onLeave));
 		LOGGER.info("Aurora ready with {} modules", modules.all().size());
 	}
@@ -134,10 +153,14 @@ public final class Aurora implements ClientModInitializer {
 		modules.register(new ArmorHud());
 		modules.register(new PotionHud());
 		modules.register(new ItemCounterHud());
+		modules.register(new CooldownsHud());
+		modules.register(new PickupsHud());
+		modules.register(new SaturationModule());
 		modules.register(new CoordinatesHud());
 		modules.register(new TargetHud());
 		modules.register(new CompassHud());
 		modules.register(new PingHud());
+		modules.register(new TpsHud());
 		modules.register(new ClockHud());
 		modules.register(new SpeedHud());
 		modules.register(new ReachHud());
@@ -166,6 +189,10 @@ public final class Aurora implements ClientModInitializer {
 		modules.register(new OverlaysModule());
 		modules.register(new HitboxesModule());
 		modules.register(new TntTimerModule());
+		modules.register(new AuroraSkyModule());
+		modules.register(new ItemPhysicsModule());
+		modules.register(new MotionBlurModule());
+		modules.register(new NametagsModule());
 		// Utility
 		modules.register(new ToggleSprintModule());
 		modules.register(new CommandBindsModule());
@@ -173,11 +200,16 @@ public final class Aurora implements ClientModInitializer {
 		modules.register(new ScreenshotsModule());
 		modules.register(new DiscordModule());
 		modules.register(new ReconnectModule());
+		modules.register(new TooltipsModule());
+		modules.register(new InventorySearchModule());
+		modules.register(new WaypointsModule());
 		// Performance
 		modules.register(new PerformanceModule());
 	}
 
 	private void registerRendering() {
+		ClientTooltipComponentCallback.EVENT.register(TooltipsModule::client);
+		ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> TooltipsModule.addLines(stack, flag, lines));
 		HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, id("hud"), HudLayer::render);
 		HudElementRegistry.replaceElement(VanillaHudElements.MOB_EFFECTS, vanilla -> (graphics, delta) -> {
 			PotionHud potions = modules.get(PotionHud.class);
@@ -224,6 +256,10 @@ public final class Aurora implements ClientModInitializer {
 			if (hitboxes.isEnabled()) {
 				hitboxes.render(context.poseStack(), context.submitNodeCollector(), camera, partialTick);
 			}
+			WaypointsModule waypoints = WaypointsModule.active();
+			if (waypoints != null) {
+				waypoints.render(context.poseStack(), context.submitNodeCollector(), camera, context.levelState().cameraRenderState);
+			}
 		});
 	}
 
@@ -233,6 +269,12 @@ public final class Aurora implements ClientModInitializer {
 		while (menuKey.consumeClick()) {
 			if (mc.gui.screen() == null) {
 				mc.gui.setScreen(new ModMenuScreen(null));
+			}
+		}
+		while (waypointKey.consumeClick()) {
+			WaypointsModule waypoints = WaypointsModule.active();
+			if (waypoints != null && mc.gui.screen() == null) {
+				waypoints.addHere();
 			}
 		}
 		for (Module module : modules.all()) {

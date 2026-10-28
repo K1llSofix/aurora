@@ -1,9 +1,11 @@
 package dev.aurora.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import dev.aurora.module.hud.ChatModule;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.multiplayer.chat.GuiMessage;
 import net.minecraft.network.chat.Component;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -86,5 +88,12 @@ public abstract class ChatComponentMixin implements ChatModule.Access {
 		if (offset != 0) {
 			graphics.updatePose(pose -> pose.translate(0, offset));
 		}
+	}
+
+	/** Chat search: drawing, clicks, the scrollbar and scrolling see only the matching lines. */
+	@ModifyExpressionValue(method = {"forEachLine", EXTRACT, "scrollChat"},
+		at = @At(value = "FIELD", target = "Lnet/minecraft/client/gui/components/ChatComponent;trimmedMessages:Ljava/util/List;", opcode = Opcodes.GETFIELD))
+	private List<GuiMessage.Line> aurora$searchLines(List<GuiMessage.Line> lines) {
+		return ChatModule.visibleLines(lines);
 	}
 }

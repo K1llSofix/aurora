@@ -18,6 +18,10 @@ loom {
 			if (project.hasProperty('quickPlay')) {
 				programArgs '--quickPlayMultiplayer', project.property('quickPlay')
 			}
+			// -PquickPlayWorld="New World" opens a singleplayer world from run/saves.
+			if (project.hasProperty('quickPlayWorld')) {
+				programArgs '--quickPlaySingleplayer', project.property('quickPlayWorld')
+			}
 		}
 	}
 }

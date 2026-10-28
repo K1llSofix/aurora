@@ -5,14 +5,18 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import dev.aurora.Aurora;
+import dev.aurora.module.hud.SaturationModule;
 import dev.aurora.module.visual.HotbarModule;
 import dev.aurora.module.visual.OverlaysModule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.Hud;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Hud.class)
 public abstract class HudMixin {
@@ -69,5 +73,14 @@ public abstract class HudMixin {
 	private boolean aurora$pumpkin(Hud hud, GuiGraphicsExtractor graphics, Identifier texture, float alpha) {
 		OverlaysModule overlays = Aurora.modules().get(OverlaysModule.class);
 		return overlays == null || !overlays.hidePumpkin();
+	}
+
+	/** Saturation: a golden line under the hunger bar and the shanks the held food would fill. */
+	@Inject(method = "extractFood", at = @At("TAIL"))
+	private void aurora$saturation(GuiGraphicsExtractor graphics, Player player, int yLineBase, int xRight, CallbackInfo ci) {
+		SaturationModule saturation = SaturationModule.active();
+		if (saturation != null) {
+			saturation.render(graphics, player, yLineBase, xRight);
+		}
 	}
 }
