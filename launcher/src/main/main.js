@@ -11,7 +11,7 @@ const { JsonStore } = require('./core/store');
 const { LauncherError, describe } = require('./core/errors');
 const { Versions } = require('./core/versions');
 const { JavaRuntimes, probe, consoleJava } = require('./core/java');
-const { Mods } = require('./core/mods');
+const { Mods, readMeta } = require('./core/mods');
 const { Packs } = require('./core/packs');
 const { Modpacks, readPack, installPack } = require('./core/modpacks');
 const { Installer } = require('./core/installer');
@@ -23,6 +23,12 @@ const { ServerPinger, parseAddress } = require('./core/servers');
 const { News } = require('./core/news');
 const { DiscordPresence } = require('./core/discord');
 const { Updater } = require('./core/updater');
+const { ContentUpdates } = require('./core/content-updates');
+const worlds = require('./core/worlds');
+const { diagnose } = require('./core/crash');
+const installTools = require('./core/install-tools');
+const gpu = require('./core/gpu');
+const changelog = require('./core/changelog');
 const defaults = require('./defaults');
 
 const APP_DIR = path.join(__dirname, '..', '..');
@@ -31,6 +37,8 @@ const DEV = !app.isPackaged || process.argv.includes('--dev');
 const paths = require('./core/paths').create();
 const BUNDLED_MODS = app.isPackaged ? path.join(process.resourcesPath, 'mods') : path.join(APP_DIR, '..', 'build', 'libs');
 const WINDOW_ICON = path.join(APP_DIR, 'build', 'icon.png');
+const LAUNCHER_CHANGELOG = path.join(APP_DIR, 'CHANGELOG.md');
+const MOD_CHANGELOG = app.isPackaged ? path.join(process.resourcesPath, 'mods', 'CHANGELOG.md') : path.join(APP_DIR, '..', 'CHANGELOG.md');
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, codeCache: true } },
@@ -56,6 +64,10 @@ const pinger = new ServerPinger();
 const news = new News({ cacheDir: paths.cache, bundled: defaults.AURORA_NEWS });
 const skins = new Skins({ dir: paths.skins, cacheDir: paths.cache });
 const icons = new Icons({ iconsDir: paths.icons, versionsDir: paths.versions });
+const contentUpdates = new ContentUpdates({
+  trash: (file) => shell.trashItem(file),
+  renamePack: (gameDir, kind, from, to) => packs.renamePack(gameDir, kind, from, to),
+});
 
 function auroraMinecraft() {
   const bundled = mods.bundled();
@@ -414,6 +426,7 @@ async function launch({ installId, server = null, world = null, verify = false }
     const { host, port } = parseAddress(server);
     server = port ? `${host}:${port}` : host;
   }
+  if (world) world = worlds.safeFolder(world);
   game.installId = inst.id;
   game.killed = false;
   game.lines = [];
@@ -439,6 +452,7 @@ async function launch({ installId, server = null, world = null, verify = false }
     signal.throwIfAborted();
     icons.forget();
     const session = await accounts.session(account.id);
+    await applyGpu(prepared.javaPath);
     setGameState('starting');
     const command = buildCommand(prepared, {
       account: session,
@@ -465,13 +479,14 @@ async function launch({ installId, server = null, world = null, verify = false }
       game.process = null;
       failed(describe(new LauncherError('launch_failed', e.message)));
     });
-    proc.on('exit', ({ code, runtime }) => {
+    proc.on('exit', async ({ code, runtime }) => {
       trace(`game ${proc.pid}: exited with ${code} after ${runtime} ms${game.killed ? ' (stopped by the player)' : ''}`);
       const crashed = !game.killed && code !== 0 && code !== null;
       const report = crashed ? newestCrashReport(gameDir, proc.started) : null;
       const tail = crashed ? game.lines.slice(-80) : [];
+      const diagnosis = crashed ? await diagnoseCrash(inst, gameDir, report).catch(() => []) : [];
       game.process = null;
-      game.lastExit = { code, runtime, crashed, report, tail, seen: false };
+      game.lastExit = { code, runtime, crashed, report, tail, diagnosis, installId: inst.id, seen: false };
       setGameState('idle', { exit: game.lastExit });
       closeSplash();
       pruneGameLogs();
@@ -504,6 +519,52 @@ async function launch({ installId, server = null, world = null, verify = false }
   } finally {
     game.controller = null;
   }
+}
+
+/** The installations' cards ask for fresh data (mod counts, Aurora's version). */
+function refreshInstallsSoon() {
+  send('app:event', { type: 'installsChanged' });
+}
+
+/** What most likely made the game crash, read from its log and crash report. */
+async function diagnoseCrash(inst, gameDir, report) {
+  const text = game.lines.slice(-3000).map((e) => e.message || '').join('\n');
+  let reportText = '';
+  if (report) {
+    try {
+      reportText = fs.readFileSync(report, 'utf8').slice(0, 300000);
+    } catch {
+      reportText = '';
+    }
+  }
+  let list = [];
+  try {
+    list = (await mods.list(gameDir)).filter((m) => m.enabled && !m.managed).map((m) => ({ id: m.id, name: m.name, file: m.file }));
+  } catch {
+    list = [];
+  }
+  const total = Math.floor(os.totalmem() / 1024 ** 2);
+  return diagnose({
+    text: `${text}\n${reportText}`,
+    mods: list,
+    memory: inst.memory || settings.data.memory,
+    maxMemory: Math.max(2048, Math.min(32768, Math.floor((total - 1024) / 512) * 512)),
+    customJava: settings.data.javaMode === 'custom',
+  });
+}
+
+/** Which graphics card Windows gives the Java that runs the game (laptops: the discrete one). */
+async function applyGpu(exe) {
+  if (process.platform !== 'win32' || !exe) return;
+  const mode = settings.data.gpu || 'auto';
+  const ours = new Set(settings.data.gpuApplied || []);
+  if (mode === 'auto' && !ours.has(exe)) return;
+  const ok = await gpu.setPreference(exe, mode, ours.has(exe));
+  if (!ok) return;
+  if (mode === 'auto') ours.delete(exe);
+  else ours.add(exe);
+  settings.data.gpuApplied = [...ours];
+  settings.save();
 }
 
 /** A launch that did not get to the game: the splash (if any) shows why. */
@@ -675,6 +736,8 @@ function publicSettings() {
     discord: s.discord !== false,
     autoUpdate: s.autoUpdate !== false,
     selectedInstall: s.selectedInstall,
+    gpu: s.gpu || 'auto',
+    themeFromMod: s.themeFromMod === true,
   };
 }
 
@@ -691,6 +754,8 @@ const SETTING_KEYS = {
   showSnapshots: (v) => typeof v === 'boolean',
   discord: (v) => typeof v === 'boolean',
   autoUpdate: (v) => typeof v === 'boolean',
+  gpu: (v) => ['auto', 'high', 'saving'].includes(v),
+  themeFromMod: (v) => typeof v === 'boolean',
 };
 
 const ICON_IDS = new Set(CATALOG.map((c) => `mc:${c.id}`));
@@ -940,6 +1005,7 @@ function registerIpc() {
     if (existing) {
       existing.name = name;
       existing.address = address;
+      if (typeof input.favorite === 'boolean') existing.favorite = input.favorite;
     } else {
       settings.data.servers.push({ id: `s${Date.now().toString(36)}`, name, address, builtin: false });
     }
@@ -1087,6 +1153,285 @@ function registerIpc() {
     }
   });
   handle('modpacks:cancel', () => packJob?.abort());
+
+  // -------------------------------------------------------------- content updates
+  const contentKind = (kind) => {
+    if (!['mod', 'resourcepack', 'shader'].includes(kind)) throw new LauncherError('bad_file', String(kind));
+    return kind;
+  };
+  handle('content:check', async (id, kind) => {
+    const { inst, dir } = instDir(id);
+    const meta = readMeta(dir);
+    // The launcher keeps Aurora and its Fabric API up to date itself.
+    const skip = contentKind(kind) === 'mod' ? Object.values(meta.managed) : [];
+    return contentUpdates.check(dir, kind, inst.version, { skip });
+  });
+  handle('content:update', async (id, kind, list) => {
+    const { dir } = instDir(id);
+    contentKind(kind);
+    if (kind !== 'mod') notRunning();
+    const done = [];
+    for (const update of Array.isArray(list) ? list : []) {
+      if (!update || typeof update.file !== 'string' || !update.download || typeof update.download.url !== 'string') continue;
+      if (!/^https:\/\/cdn\.modrinth\.com\//.test(update.download.url)) continue;
+      const name = await contentUpdates.apply(dir, kind, update, { onProgress: (p) => send('content:progress', { file: update.file, ...p }) });
+      done.push({ from: update.file, to: name });
+    }
+    if (kind === 'mod') refreshInstallsSoon();
+    return done;
+  });
+
+  // -------------------------------------------------------------- worlds
+  const notRunningIn = (id) => {
+    if (game.process && game.installId === id) throw new LauncherError('game_running');
+  };
+  handle('worlds:list', (id) => worlds.list(instDir(id).dir));
+  handle('worlds:size', (id, folder) => worlds.size(instDir(id).dir, folder));
+  handle('worlds:backups', (id) => worlds.backups(instDir(id).dir));
+  handle('worlds:backup', async (id, folder) => {
+    const { inst, dir } = instDir(id);
+    notRunningIn(inst.id);
+    const file = await worlds.backup(dir, folder, { onProgress: (p) => send('worlds:progress', { folder, ...p }) });
+    return path.basename(file);
+  });
+  handle('worlds:restore', async (id, file, label) => {
+    const { dir } = instDir(id);
+    return worlds.restore(dir, file, { label: typeof label === 'string' ? label.slice(0, 40) : '' });
+  });
+  handle('worlds:remove', async (id, folder) => {
+    const { inst, dir } = instDir(id);
+    notRunningIn(inst.id);
+    await shell.trashItem(path.join(worlds.savesDir(dir), worlds.safeFolder(folder)));
+  });
+  handle('worlds:removeBackup', async (id, file) => {
+    await shell.trashItem(path.join(worlds.backupsDir(instDir(id).dir), safePack(path.basename(String(file)))));
+  });
+  handle('worlds:showBackup', (id, file) => {
+    shell.showItemInFolder(path.join(worlds.backupsDir(instDir(id).dir), safePack(path.basename(String(file)))));
+  });
+  handle('worlds:open', async (id, folder) => {
+    await shell.openPath(path.join(worlds.savesDir(instDir(id).dir), worlds.safeFolder(folder)));
+  });
+
+  // -------------------------------------------------------------- screenshots of every installation
+  const shotDirs = () => settings.data.installs.map((inst) => ({ inst, dir: path.join(gameDirOf(inst), 'screenshots') }));
+  const shotFile = (file) => {
+    const target = path.resolve(String(file || ''));
+    const ok = /\.(png|jpe?g)$/i.test(target) && shotDirs().some(({ dir }) => target.startsWith(path.resolve(dir) + path.sep));
+    if (!ok || !fs.existsSync(target)) throw new LauncherError('bad_file', path.basename(target));
+    return target;
+  };
+  const thumbCache = new Map();
+  handle('shots:list', async () => {
+    const out = [];
+    for (const { inst, dir } of shotDirs()) {
+      let names = [];
+      try {
+        names = await fs.promises.readdir(dir);
+      } catch {
+        continue;
+      }
+      for (const name of names) {
+        if (!/\.(png|jpe?g)$/i.test(name)) continue;
+        try {
+          const stat = await fs.promises.stat(path.join(dir, name));
+          out.push({ file: path.join(dir, name), name, installId: inst.id, installName: inst.name, modified: stat.mtimeMs, size: stat.size });
+        } catch {
+          // Gone meanwhile.
+        }
+      }
+    }
+    out.sort((a, b) => b.modified - a.modified);
+    return out.slice(0, 600);
+  });
+  handle('shots:thumb', (file) => {
+    const target = shotFile(file);
+    const key = `${target}|${fs.statSync(target).mtimeMs}`;
+    if (!thumbCache.has(key)) {
+      const image = nativeImage.createFromPath(target);
+      thumbCache.set(key, image.isEmpty() ? null : `data:image/jpeg;base64,${image.resize({ width: 360, quality: 'good' }).toJPEG(82).toString('base64')}`);
+      if (thumbCache.size > 800) thumbCache.delete(thumbCache.keys().next().value);
+    }
+    return thumbCache.get(key);
+  });
+  handle('shots:image', (file) => {
+    const image = nativeImage.createFromPath(shotFile(file));
+    if (image.isEmpty()) return null;
+    const { width, height } = image.getSize();
+    const scaled = width > 1920 ? image.resize({ width: 1920, quality: 'best' }) : image;
+    return { url: `data:image/jpeg;base64,${scaled.toJPEG(90).toString('base64')}`, width, height };
+  });
+  handle('shots:copy', (file) => {
+    clipboard.writeImage(nativeImage.createFromPath(shotFile(file)));
+  });
+  handle('shots:remove', async (file) => {
+    await shell.trashItem(shotFile(file));
+  });
+
+  // -------------------------------------------------------------- installation tools
+  handle('installs:clone', async (id, opts = {}) => {
+    const source = installById(id);
+    if (!source) throw new LauncherError('bad_file', String(id));
+    const copy = sanitizeInstall({ ...source, gameDir: null, name: typeof opts.name === 'string' && opts.name.trim() ? opts.name : `${source.name} (2)` }, null);
+    copy.modpack = source.modpack || undefined;
+    await installTools.cloneFolder(gameDirOf(source), gameDirOf(copy), { worlds: opts.worlds === true, screenshots: opts.screenshots === true });
+    settings.data.installs.push(copy);
+    settings.save();
+    return installInfo(copy);
+  });
+  handle('installs:export', async (id) => {
+    const { inst, dir } = instDir(id);
+    const res = await dialog.showSaveDialog(win, {
+      defaultPath: path.join(app.getPath('downloads'), `${inst.name.replace(/[\\/:*?"<>|]+/g, '_')}.mrpack`),
+      filters: [{ name: 'Modrinth modpack', extensions: ['mrpack'] }],
+    });
+    if (res.canceled || !res.filePath) return null;
+    const loaderVersion = inst.loader === 'fabric' ? await versions.fabricLoader(inst.version, inst.loaderVersion).catch(() => null) : null;
+    const stats = await installTools.exportPack(dir, res.filePath, {
+      name: inst.name,
+      version: (inst.modpack && inst.modpack.version) || '1.0.0',
+      minecraft: inst.version,
+      loader: inst.loader,
+      loaderVersion,
+      onProgress: (p) => send('installs:exportProgress', p),
+    });
+    return { file: res.filePath, ...stats };
+  });
+  handle('installs:copySettings', async (fromId, toId, parts) => {
+    const from = installById(fromId);
+    const to = installById(toId);
+    if (!from || !to || from.id === to.id) throw new LauncherError('bad_file', String(toId));
+    notRunningIn(to.id);
+    const wanted = (Array.isArray(parts) ? parts : []).filter((p) => Object.prototype.hasOwnProperty.call(installTools.SETTING_PARTS, p));
+    return installTools.copySettings(gameDirOf(from), gameDirOf(to), wanted);
+  });
+
+  // -------------------------------------------------------------- crashes
+  handle('crash:fix', async (action, id) => {
+    const { inst, dir } = instDir(id);
+    if (!action || typeof action.type !== 'string') throw new LauncherError('bad_file', 'action');
+    switch (action.type) {
+      case 'memory': {
+        const value = Math.round(Number(action.value) / 512) * 512;
+        if (!Number.isInteger(value) || value < 1024 || value > 65536) throw new LauncherError('bad_file', 'memory');
+        if (inst.memory) inst.memory = value;
+        else settings.data.memory = value;
+        settings.save();
+        send('settings:changed', publicSettings());
+        refreshInstallsSoon();
+        return { memory: value };
+      }
+      case 'disable':
+        await mods.setEnabled(dir, safeMod(String(action.file)), false);
+        refreshInstallsSoon();
+        return { disabled: action.file };
+      case 'install': {
+        if (inst.loader !== 'fabric') throw new LauncherError('mods_need_fabric');
+        const project = String(action.project || '');
+        if (!/^[\w.-]{2,64}$/.test(project)) throw new LauncherError('bad_file', project);
+        await mods.install(project, dir, inst.version);
+        refreshInstallsSoon();
+        return { installed: project };
+      }
+      case 'java':
+        settings.data.javaMode = 'auto';
+        settings.save();
+        send('settings:changed', publicSettings());
+        return { java: 'auto' };
+      case 'drivers': {
+        const info = await app.getGPUInfo('basic').catch(() => null);
+        const vendor = info && info.gpuDevice && (info.gpuDevice.find((d) => d.active) || info.gpuDevice[0]);
+        const pages = {
+          0x10de: 'https://www.nvidia.com/drivers',
+          0x1002: 'https://www.amd.com/en/support/download/drivers.html',
+          0x8086: 'https://www.intel.com/content/www/us/en/support/detect.html',
+        };
+        openExternal(pages[vendor && vendor.vendorId] || 'https://www.nvidia.com/drivers');
+        return {};
+      }
+      default:
+        throw new LauncherError('bad_file', action.type);
+    }
+  });
+  handle('logs:share', async () => {
+    const lines = game.lines.slice(-20000).map((e) => `[${e.time || ''}] [${e.thread || 'main'}/${e.level || 'INFO'}] ${e.message || ''}`);
+    let report = '';
+    if (game.lastExit && game.lastExit.report) {
+      try {
+        report = fs.readFileSync(game.lastExit.report, 'utf8').slice(0, 2 * 1024 * 1024);
+      } catch {
+        report = '';
+      }
+    }
+    const content = [lines.join('\n'), report].filter(Boolean).join('\n\n---- Crash report ----\n\n');
+    if (!content.trim()) throw new LauncherError('log_empty');
+    const res = await net.postForm('https://api.mclo.gs/1/log', { content }, { timeout: 30000 });
+    if (!res.ok || !res.json.success || typeof res.json.url !== 'string') throw new LauncherError('log_upload_failed', String(res.json.error || res.status));
+    clipboard.writeText(res.json.url);
+    return res.json.url;
+  });
+
+  // -------------------------------------------------------------- what's new, theme from the mod
+  const modVersionNow = () => {
+    const bundled = mods.bundled();
+    return bundled ? String(bundled.version).split('+')[0] : null;
+  };
+  // The changelogs are written in English; the Russian interface reads its own translation.
+  const russian = (() => {
+    try {
+      return JSON.parse(fs.readFileSync(path.join(__dirname, 'changelog-ru.json'), 'utf8'));
+    } catch {
+      return { launcher: {}, mod: {} };
+    }
+  })();
+  const translate = (notes, lang) => {
+    if (!notes || lang !== 'ru') return notes;
+    const swap = (list, group) => list.map((n) => (russian[group][n.version] ? { ...n, body: russian[group][n.version] } : n));
+    return { launcher: swap(notes.launcher, 'launcher'), mod: swap(notes.mod, 'mod') };
+  };
+  handle('app:whatsNew', (lang) => translate(whatsNewNotes(), lang));
+  const whatsNewNotes = () => {
+    const launcherNow = app.getVersion();
+    const modNow = modVersionNow();
+    // The very first start shows nothing: everything is new then. A launcher from before this
+    // feature (no record yet, but it has been played) shows what its update brought.
+    const usedBefore = settings.data.installs.some((i) => i.lastPlayed > 0);
+    if (!settings.data.seenLauncher && !usedBefore) {
+      settings.data.seenLauncher = launcherNow;
+      settings.data.seenMod = modNow;
+      settings.save();
+      return null;
+    }
+    const only = (list, version) => list.filter((n) => n.version === version);
+    let launcherNotes = changelog.since(LAUNCHER_CHANGELOG, settings.data.seenLauncher || null, launcherNow);
+    let modNotes = modNow ? changelog.since(MOD_CHANGELOG, settings.data.seenMod || null, modNow) : [];
+    if (!settings.data.seenLauncher) {
+      launcherNotes = only(launcherNotes, launcherNow);
+      modNotes = only(modNotes, modNow);
+    }
+    if (!launcherNotes.length && !modNotes.length) return null;
+    return { launcher: launcherNotes, mod: modNotes };
+  };
+  handle('app:whatsNewSeen', () => {
+    settings.data.seenLauncher = app.getVersion();
+    settings.data.seenMod = modVersionNow();
+    settings.save();
+  });
+  handle('app:changelog', (lang) => translate({
+    launcher: changelog.since(LAUNCHER_CHANGELOG, null, app.getVersion()),
+    mod: changelog.since(MOD_CHANGELOG, null, modVersionNow() || '0'),
+  }, lang));
+  handle('app:modTheme', () => {
+    const inst = selectedInstall();
+    try {
+      const config = JSON.parse(fs.readFileSync(path.join(gameDirOf(inst), 'config', 'aurora.json'), 'utf8'));
+      const client = config.modules && config.modules.client && config.modules.client.settings;
+      if (!client) return null;
+      return { theme: typeof client.theme === 'string' ? client.theme : 'aurora', accent: client.accent && typeof client.accent.argb === 'string' ? client.accent.argb : null };
+    } catch {
+      return null;
+    }
+  });
 
   handle('updates:state', () => updater.state);
   handle('updates:check', () => updater.check());

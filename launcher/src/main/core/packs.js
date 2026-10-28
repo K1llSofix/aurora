@@ -214,6 +214,20 @@ class Packs {
     writeProperty(irisFile(gameDir), file ? { shaderPack: file, enableShaders: 'true' } : { enableShaders: 'false' });
   }
 
+  /** Keeps a renamed pack (a new version of it) switched on where the old file was. */
+  renamePack(gameDir, kind, from, to) {
+    if (kind === 'resourcepack') {
+      const list = enabledPacks(gameDir);
+      const i = list.indexOf(`file/${from}`);
+      if (i >= 0) {
+        list[i] = `file/${to}`;
+        writeEnabledPacks(gameDir, list);
+      }
+    } else if (kind === 'shader' && readProperties(irisFile(gameDir)).shaderPack === from) {
+      writeProperty(irisFile(gameDir), { shaderPack: to });
+    }
+  }
+
   async addFiles(gameDir, kind, files) {
     const dir = this.folder(gameDir, kind);
     await fsp.mkdir(dir, { recursive: true });

@@ -26,3 +26,7 @@ for (const old of fs.readdirSync(OUT)) {
 }
 fs.copyFileSync(path.join(LIBS, newest), path.join(OUT, newest));
 console.log(`Bundled ${newest}`);
+
+// The mod's changelog goes along for the launcher's "What's new".
+const changelog = path.join(__dirname, '..', '..', 'CHANGELOG.md');
+if (fs.existsSync(changelog)) fs.copyFileSync(changelog, path.join(OUT, 'CHANGELOG.md'));

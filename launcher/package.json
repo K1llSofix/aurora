@@ -1,7 +1,7 @@
 {
   "name": "aurora-launcher",
   "productName": "Aurora Launcher",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Лаунчер Minecraft с клиентом Aurora",
   "main": "src/main/main.js",
   "author": "K1llSofix",
@@ -28,6 +28,7 @@
     },
     "files": [
       "package.json",
+      "CHANGELOG.md",
       "src/**/*",
       "build/icon.png"
     ],
@@ -36,7 +37,8 @@
         "from": "resources/mods",
         "to": "mods",
         "filter": [
-          "*.jar"
+          "*.jar",
+          "CHANGELOG.md"
         ]
       }
     ],

@@ -2,6 +2,7 @@ import { h, btn } from '../dom.js';
 import { icon, logo } from '../icons.js';
 import { t, formatMemory } from '../i18n.js';
 import { api, state } from '../store.js';
+import { whatsNew } from '../app.js';
 
 const LINKS = [
   ['Fabric', 'https://fabricmc.net/'],
@@ -21,7 +22,8 @@ export function render() {
         h('div.row', { style: { margin: '6px 0' } },
           h('span.chip.accent', `v${info.version}`),
           info.aurora ? h('span.chip.violet', icon('sparkle'), `Aurora ${info.aurora.version.split('+')[0]} · Minecraft ${info.aurora.minecraft}`) : null),
-        h('p', t('about.tagline')))),
+        h('p', t('about.tagline'))),
+      btn(t('whatsnew.button'), { icon: 'sparkle', onclick: () => whatsNew(true) })),
     h('div.about-grid',
       h('div.card',
         h('h3', t('about.features')),

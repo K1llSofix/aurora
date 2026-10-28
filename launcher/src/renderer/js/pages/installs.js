@@ -16,6 +16,10 @@ function card(inst) {
     { icon: 'folder', label: t('installs.folder'), onclick: () => api.app.openFolder('game', inst.id) },
     { icon: 'shield', label: t('installs.repair'), onclick: () => repair(inst) },
     'sep',
+    { icon: 'copy', label: t('tools.clone'), sub: t('tools.cloneHint'), onclick: () => cloneDialog(inst) },
+    inst.loader === 'fabric' ? { icon: 'box', label: t('tools.export'), sub: t('tools.exportHint'), onclick: () => exportPack(inst) } : null,
+    state.installs.length > 1 ? { icon: 'sliders', label: t('tools.copySettings'), sub: t('tools.copySettingsHint'), onclick: () => copySettingsDialog(inst) } : null,
+    'sep',
     { icon: 'trash', label: t('installs.delete'), danger: true, onclick: () => remove(inst) },
   ], { alignRight: true, minWidth: 280 }));
   const chips = h('div.chips',
@@ -61,6 +65,94 @@ export async function shortcut(inst, where) {
   } catch (e) {
     showError(e);
   }
+}
+
+/** A copy of the installation with its own folder: mods, settings, packs; worlds if asked for. */
+function cloneDialog(inst) {
+  modal((close) => {
+    const name = h('input.input', { value: t('tools.cloneName', { name: inst.name }).slice(0, 40), maxlength: 40 });
+    let worlds = false;
+    let screenshots = false;
+    const go = btn(t('tools.cloneGo'), { class: 'primary', icon: 'copy' });
+    go.addEventListener('click', async () => {
+      go.disabled = true;
+      try {
+        const copy = await api.installs.clone(inst.id, { name: name.value, worlds, screenshots });
+        await refreshInstalls();
+        close();
+        toast(t('tools.cloned', { name: copy.name }), { icon: 'copy' });
+      } catch (e) {
+        go.disabled = false;
+        showError(e);
+      }
+    });
+    return [
+      modalHead(t('tools.clone'), t('tools.cloneText'), close),
+      h('div.modal-body',
+        h('div.field', h('label', t('editor.name')), name),
+        h('div.set-row', h('div.text', h('div.t', t('tools.cloneWorlds')), h('div.d', t('tools.cloneWorldsHint'))), h('div.control', toggle(false, (on) => { worlds = on; }))),
+        h('div.set-row', h('div.text', h('div.t', t('tools.cloneShots'))), h('div.control', toggle(false, (on) => { screenshots = on; })))),
+      h('div.modal-foot', btn(t('common.cancel'), { onclick: () => close() }), go),
+    ];
+  });
+}
+
+/** The installation as a .mrpack: friends install the same set in any launcher that reads them. */
+async function exportPack(inst) {
+  toast(t('tools.exporting', { name: inst.name }), { icon: 'box' });
+  try {
+    const res = await api.installs.exportPack(inst.id);
+    if (!res) return;
+    toast(t('tools.exported', { linked: res.linked, included: res.included }), { icon: 'check', detail: res.file, duration: 6000 });
+    api.app.showItem(res.file);
+  } catch (e) {
+    showError(e);
+  }
+}
+
+/** Game settings, Aurora's settings and the server list carried over from another installation. */
+function copySettingsDialog(inst) {
+  const others = state.installs.filter((i) => i.id !== inst.id);
+  let from = others[0];
+  const parts = new Set(['options', 'aurora']);
+  modal((close) => {
+    const pick = h('button.select', { type: 'button' });
+    const renderPick = () => fill(pick, h('div.inst-icon', { style: { width: '20px', height: '20px', borderRadius: '6px' } }, installIcon(from)), h('span.grow', from.name), icon('chevronDown'));
+    renderPick();
+    pick.addEventListener('click', () => menu(pick, others.map((i) => ({
+      label: i.name,
+      sub: installSubtitle(i),
+      checked: i.id === from.id,
+      onclick: () => {
+        from = i;
+        renderPick();
+      },
+    })), { minWidth: 300 }));
+    const row = (key) => h('div.set-row',
+      h('div.text', h('div.t', t(`tools.part.${key}`)), h('div.d', t(`tools.part.${key}.hint`))),
+      h('div.control', toggle(parts.has(key), (on) => (on ? parts.add(key) : parts.delete(key)))));
+    const go = btn(t('tools.copyGo'), { class: 'primary', icon: 'check' });
+    go.addEventListener('click', async () => {
+      if (!parts.size) return;
+      go.disabled = true;
+      try {
+        const n = await api.installs.copySettings(from.id, inst.id, [...parts]);
+        close();
+        toast(t('tools.copied', { n, from: from.name, to: inst.name }), { icon: 'check' });
+      } catch (e) {
+        go.disabled = false;
+        showError(e);
+      }
+    });
+    return [
+      modalHead(t('tools.copySettings'), t('tools.copyText', { name: inst.name }), close),
+      h('div.modal-body',
+        h('div.field', h('label', t('tools.copyFrom')), pick),
+        row('options'), row('aurora'), row('servers'),
+        h('div.hint.dim', { style: { fontSize: '12px', marginTop: '8px' } }, t('tools.copyBackup'))),
+      h('div.modal-foot', btn(t('common.cancel'), { onclick: () => close() }), go),
+    ];
+  });
 }
 
 async function remove(inst) {

@@ -33,6 +33,18 @@ function row(server, onchange) {
       addr,
       motdBox),
     h('div.tools',
+      iconBtn(server.favorite ? 'starFilled' : 'star', {
+        class: server.favorite ? 'fav on' : 'fav',
+        tip: t(server.favorite ? 'servers.unfavorite' : 'servers.favorite'),
+        onclick: async () => {
+          try {
+            state.servers = await api.servers.save({ id: server.id, name: server.name, address: server.address, favorite: !server.favorite });
+            onchange();
+          } catch (e) {
+            showError(e);
+          }
+        },
+      }),
       iconBtn('edit', { tip: t('servers.edit'), onclick: () => editDialog(server, onchange) }),
       iconBtn('trash', {
         class: 'danger',
@@ -151,7 +163,9 @@ export function render() {
         btn(t('servers.add'), { class: 'primary', icon: 'plus', onclick: () => editDialog(null, rebuild) }))));
       return;
     }
-    append(list, state.servers.map((s) => row(s, rebuild)));
+    // Favourites first, the rest in the order the player arranged them.
+    const ordered = [...state.servers.filter((s) => s.favorite), ...state.servers.filter((s) => !s.favorite)];
+    append(list, ordered.map((s) => row(s, rebuild)));
   };
   api.servers.list().then((s) => {
     state.servers = s;

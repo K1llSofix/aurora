@@ -247,6 +247,78 @@ module.exports = ({ win, app }) => {
           await js("window.aurora.settings.set({ jvmArgs: '' })");
           continue;
         }
+        if (page === 'crashhelp') {
+          // The crash window with a diagnosis, as the main process sends it after a crash.
+          win.webContents.send('game:state', {
+            state: 'idle',
+            exit: {
+              code: 1, crashed: true, installId: 'aurora', report: null, seen: false,
+              tail: [{ level: 'ERROR', time: '12:00:00', thread: 'Render thread', message: 'java.lang.OutOfMemoryError: Java heap space' }],
+              diagnosis: [
+                { kind: 'memory', params: { memory: 4096, more: 6144 }, action: { type: 'memory', value: 6144 } },
+                { kind: 'missing', params: { mod: 'Sodium', dependency: 'Fabric API' }, action: { type: 'install', project: 'fabric-api', name: 'Fabric API' } },
+              ],
+            },
+          });
+          await wait(1000);
+          await shot('crashhelp');
+          await js("document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}))");
+          continue;
+        }
+        if (page === 'whatsnew') {
+          await js("document.querySelector('.nav-item[data-page=\"about\"]').click()");
+          await wait(700);
+          await js("document.querySelector('.about-hero > .btn')?.click()");
+          await wait(1000);
+          await shot('whatsnew');
+          await js("document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}))");
+          continue;
+        }
+        if (page === 'updates') {
+          // Mods page: check for updates; with AURORA_UPDATES_INSTALL also "Update all".
+          await js("document.querySelector('.nav-item[data-page=\"mods\"]').click()");
+          await wait(1500);
+          await js("document.querySelector('.toolbar .icon-btn.boxed')?.click()");
+          await wait(7000);
+          await shot('updates-found');
+          if (process.env.AURORA_UPDATES_INSTALL) {
+            await js("document.querySelector('.note.banner .btn')?.click()");
+            await wait(15000);
+            await shot('updates-done');
+          }
+          continue;
+        }
+        if (page === 'shotsview') {
+          await js("document.querySelector('.nav-item[data-page=\"shots\"]').click()");
+          await wait(3000);
+          await shot('shots');
+          await js("document.querySelector('.shot-thumb')?.click()");
+          await wait(2500);
+          await shot('shots-viewer');
+          await js("document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}))");
+          continue;
+        }
+        if (page === 'worldbackup') {
+          await js("document.querySelector('.nav-item[data-page=\"worlds\"]').click()");
+          await wait(2000);
+          await shot('worlds');
+          await js("document.querySelector('.mod-row .icon-btn')?.click()");
+          await wait(5000);
+          await shot('worlds-backup');
+          continue;
+        }
+        if (page === 'instmenu') {
+          await js("document.querySelector('.nav-item[data-page=\"installs\"]').click()");
+          await wait(900);
+          await js("document.querySelector('.inst-card .icon-btn')?.click()");
+          await wait(500);
+          await shot('installs-menu');
+          await js("[...document.querySelectorAll('.popover .menu-item')].find((b) => /копи|copy/i.test(b.textContent))?.click()");
+          await wait(800);
+          await shot('installs-clone');
+          await js("document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}))");
+          continue;
+        }
         if (page === 'scene') {
           await js("document.getElementById('root').style.display='none';document.getElementById('shade').style.display='none';true");
           if (extra) await js(`window.__scene.debug=${JSON.stringify(extra)};window.__scene.draw(0);true`);

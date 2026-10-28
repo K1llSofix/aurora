@@ -72,8 +72,53 @@ function installedTab(inst, kind) {
   const filter = h('input.input', { placeholder: t(`content.${kind}.filter`) });
   const list = h('div.card.list-card');
   const banner = h('div');
+  const updatesBanner = h('div');
   const wrap = h('div', { style: { position: 'relative' } });
   let items = [];
+  // Newer versions found on Modrinth, by file name.
+  let updates = new Map();
+  let updating = false;
+
+  const applyUpdates = async (list) => {
+    if (updating || !list.length) return;
+    updating = true;
+    renderUpdates();
+    redraw();
+    try {
+      const done = await api.content.update(inst.id, kind, list);
+      for (const u of list) updates.delete(u.file);
+      toast(t('updates.done', { n: done.length }), { icon: 'download' });
+    } catch (e) {
+      showError(e);
+    }
+    updating = false;
+    await load();
+    renderUpdates();
+  };
+
+  const renderUpdates = () => {
+    clear(updatesBanner);
+    if (!updates.size) return;
+    const all = btn(t('updates.all'), { class: 'primary sm', icon: 'download', disabled: updating, onclick: () => applyUpdates([...updates.values()]) });
+    updatesBanner.append(h('div.note.banner', { style: { marginBottom: '14px' } },
+      icon('download'),
+      h('div.grow', h('b', t('updates.found', { n: updates.size })), h('div', t(`updates.hint.${kind}`))),
+      updating ? h('div.spinner') : all));
+  };
+
+  const checkUpdates = async (button) => {
+    button.disabled = true;
+    try {
+      const list = await api.content.check(inst.id, kind);
+      updates = new Map(list.map((u) => [u.file, u]));
+      if (!list.length) toast(t('updates.none'), { icon: 'check' });
+    } catch (e) {
+      showError(e);
+    }
+    button.disabled = false;
+    renderUpdates();
+    redraw();
+  };
 
   const toggleFor = (item) => {
     if (kind === 'mod') {
@@ -114,9 +159,12 @@ function installedTab(inst, kind) {
     } else {
       desc = item.size ? formatBytes(item.size) : t('content.folder');
     }
+    const update = updates.get(item.file);
+    if (update) badges.push(h('span.chip.accent', { style: { height: '20px', fontSize: '11px' } }, icon('download'), update.to));
     return h(`div.mod-row${item.enabled ? '' : '.off'}`,
       itemIcon(item.icon, kind),
       h('div.grow', { style: { minWidth: 0 } }, h('div.title', h('span.ellipsis', item.name), badges), h('div.desc.ellipsis', desc)),
+      update ? iconBtn('download', { tip: t('updates.one', { version: update.to }), disabled: updating, onclick: () => applyUpdates([update]) }) : null,
       toggleFor(item),
       managed ? h('div', { style: { width: '34px' } }) : iconBtn('trash', {
         class: 'danger',
@@ -196,9 +244,15 @@ function installedTab(inst, kind) {
   wrap.append(list);
   const el = h('div',
     banner,
+    updatesBanner,
     h('div.toolbar',
       h('div.input-wrap', { style: { flex: 1, maxWidth: '420px' } }, icon('search'), filter),
       h('div.grow'),
+      (() => {
+        const check = iconBtn('refresh', { tip: t('updates.check'), class: 'boxed' });
+        check.addEventListener('click', () => checkUpdates(check));
+        return check;
+      })(),
       btn(t('mods.openFolder'), { icon: 'folder', onclick: () => api.app.openFolder(k.folder, inst.id) }),
       btn(t('mods.addFiles'), {
         icon: 'plus',

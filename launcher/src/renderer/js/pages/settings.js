@@ -172,7 +172,10 @@ export function render() {
         h('h3', icon('grass'), t('settings.game')),
         memoryCard(),
         setRow(t('settings.resolution'), t('settings.resolutionHint'), resolutionControl()),
-        setRow(t('settings.jvm'), t('settings.jvmHint'), jvm)),
+        setRow(t('settings.jvm'), t('settings.jvmHint'), jvm),
+        state.info.platform === 'win32'
+          ? setRow(t('settings.gpu'), t('settings.gpuHint'), segmented([['auto', t('settings.gpu.auto')], ['high', t('settings.gpu.high')], ['saving', t('settings.gpu.saving')]], s.gpu || 'auto', (v) => save({ gpu: v })))
+          : null),
       javaCard(),
       h('div.card.set-card',
         h('h3', icon('sparkle'), t('settings.launcher')),
@@ -180,6 +183,7 @@ export function render() {
           ['hide', 'minimize', 'keep', 'close'].map((k) => [k, t(`settings.after.${k}`)]), s.afterLaunch, (v) => save({ afterLaunch: v }))),
         setRow(t('settings.language'), null, selectRow([['auto', t('settings.lang.auto')], ['ru', 'Русский'], ['en', 'English']], s.language, (v) => save({ language: v }, true))),
         setRow(t('settings.motion'), t('settings.motionHint'), toggle(s.motion, (on) => save({ motion: on }, true))),
+        setRow(t('settings.themeFromMod'), t('settings.themeFromModHint'), toggle(s.themeFromMod === true, (on) => save({ themeFromMod: on }, true))),
         setRow(t('settings.discord'), t('settings.discordHint'), toggle(s.discord !== false, (on) => save({ discord: on }))),
         setRow(t('settings.autoUpdate'), t('settings.autoUpdateHint'), toggle(s.autoUpdate !== false, (on) => save({ autoUpdate: on }))),
         updates.el),

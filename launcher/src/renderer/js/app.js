@@ -1,6 +1,6 @@
-import { h, fill, btn, iconBtn, clear, toast, modal, modalHead, popover, menu, forgetFaces } from './dom.js';
+import { h, fill, btn, iconBtn, clear, toast, modal, modalHead, popover, menu, forgetFaces, confirmDialog } from './dom.js';
 import { icon, logo, installIcon, setIconCatalog } from './icons.js';
-import { t, tp, setLanguage, resolveLanguage, formatBytes, formatMemory, errorText, formatNumber } from './i18n.js';
+import { t, tp, setLanguage, resolveLanguage, formatBytes, formatMemory, errorText, formatNumber, language } from './i18n.js';
 import { api, state, set, on, selectedInstall, refreshInstalls, showError } from './store.js';
 import { accountCard, addAccountDialog } from './accounts.js';
 import { AuroraBackdrop } from './scene.js';
@@ -8,15 +8,19 @@ import * as home from './pages/home.js';
 import * as installs from './pages/installs.js';
 import * as servers from './pages/servers.js';
 import * as mods from './pages/mods.js';
+import * as worlds from './pages/worlds.js';
+import * as shots from './pages/shots.js';
 import * as settings from './pages/settings.js';
 import * as about from './pages/about.js';
 
-const PAGES = { home, installs, servers, mods, settings, about };
+const PAGES = { home, installs, servers, mods, worlds, shots, settings, about };
 const NAV = [
   ['home', 'home'],
   ['installs', 'layers'],
   ['servers', 'server'],
   ['mods', 'puzzle'],
+  ['worlds', 'globe'],
+  ['shots', 'image'],
   ['settings', 'sliders'],
   ['about', 'info'],
 ];
@@ -262,6 +266,7 @@ export function toggleConsole(open) {
   consoleEl = h('div.console',
     h('div.bar', icon('terminal'), h('h3', t('console.title')), filters, h('div.grow'),
       iconBtn('copy', { tip: t('crash.copy'), onclick: () => { api.app.copy(state.logs.map((e) => `[${e.time || ''}] [${e.thread}/${e.level}] ${e.message}`).join('\n')); toast(t('crash.copied'), { icon: 'copy' }); } }),
+      iconBtn('share', { tip: t('crash.share'), onclick: () => shareLog() }),
       iconBtn('folder', { tip: t('console.folder'), onclick: () => api.app.openFolder('logs') }),
       iconBtn('x', { tip: t('common.close'), onclick: () => toggleConsole() })),
     lines);
@@ -276,6 +281,53 @@ export function toggleConsole(open) {
   redraw();
 }
 
+/** Uploads the game log to mclo.gs after saying so, and copies the link. */
+export async function shareLog() {
+  const yes = await confirmDialog({ title: t('crash.shareTitle'), text: t('crash.shareText'), confirm: t('crash.shareGo') });
+  if (!yes) return;
+  try {
+    const url = await api.crash.share();
+    toast(t('crash.shared'), { icon: 'link', detail: url, duration: 7000 });
+  } catch (e) {
+    showError(e);
+  }
+}
+
+/** What the launcher thinks broke the game, each with a one-click fix where there is one. */
+function diagnosis(exit, close) {
+  const list = exit.diagnosis || [];
+  if (!list.length) return null;
+  return h('div.col.diagnosis', list.map((d) => {
+    const params = { ...d.params };
+    if (d.kind === 'memory') {
+      params.memory = formatMemory(d.params.memory);
+      params.more = formatMemory(d.params.more);
+    }
+    let fix = null;
+    if (d.action) {
+      const label = t(`crash.fix.${d.action.type}`, { ...params, name: d.action.name || params.mod || '' });
+      fix = btn(label, { class: 'primary sm', icon: 'wand' });
+      fix.addEventListener('click', async () => {
+        if (d.action.type === 'worlds') {
+          close();
+          navigate('worlds');
+          return;
+        }
+        fix.disabled = true;
+        try {
+          await api.crash.fix(d.action, exit.installId);
+          fix.replaceWith(h('span.chip.accent', icon('check'), t('crash.fixed')));
+          refreshInstalls().catch(() => {});
+        } catch (e) {
+          fix.disabled = false;
+          showError(e);
+        }
+      });
+    }
+    return h('div.note.banner', icon('alert'), h('div.grow', h('b', t(`crash.why.${d.kind}`, params)), h('div', t(`crash.why.${d.kind}.hint`, params))), fix);
+  }));
+}
+
 function crashDialog(exit) {
   modal((close) => {
     const tail = h('div.console', { style: { position: 'static', height: '260px', margin: 0, borderRadius: '14px', border: '1px solid rgba(255,255,255,.1)', animation: 'none' } },
@@ -285,16 +337,146 @@ function crashDialog(exit) {
       l.scrollTop = l.scrollHeight;
     });
     return [
-      modalHead(t('crash.title'), t('crash.text', { code: exit.code }), close),
-      h('div.modal-body', tail),
+      modalHead(t('crash.title'), (exit.diagnosis || []).length ? t('crash.textFound') : t('crash.text', { code: exit.code }), close),
+      h('div.modal-body', diagnosis(exit, close), tail),
       h('div.modal-foot',
         exit.report ? btn(t('crash.report'), { icon: 'folder', onclick: () => api.app.openFolder('crash') }) : null,
         btn(t('crash.copy'), { icon: 'copy', onclick: () => { api.app.copy(exit.tail.map((e) => e.message).join('\n')); toast(t('crash.copied'), { icon: 'copy' }); } }),
+        btn(t('crash.share'), { icon: 'share', onclick: () => shareLog() }),
         h('div.grow'),
         btn(t('crash.console'), { icon: 'terminal', onclick: () => { close(); toggleConsole(true); } }),
         btn(t('common.close'), { class: 'primary', onclick: () => close() })),
     ];
   }, { wide: true });
+}
+
+// ------------------------------------------------------------------ what's new
+
+/** A tiny Markdown reader for changelogs: headings, lists, bold and code. */
+function markdown(text) {
+  const out = [];
+  let list = null;
+  const inline = (line) => {
+    const parts = [];
+    const re = /\*\*([^*]+)\*\*|`([^`]+)`|\[([^\]]+)\]\([^)]+\)/g;
+    let last = 0;
+    for (const m of line.matchAll(re)) {
+      if (m.index > last) parts.push(line.slice(last, m.index));
+      if (m[1]) parts.push(h('b', m[1]));
+      else if (m[2]) parts.push(h('code', m[2]));
+      else parts.push(m[3]);
+      last = m.index + m[0].length;
+    }
+    if (last < line.length) parts.push(line.slice(last));
+    return parts;
+  };
+  for (const raw of String(text).split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) {
+      list = null;
+      continue;
+    }
+    if (line.startsWith('### ')) {
+      list = null;
+      out.push(h('h4', inline(line.slice(4))));
+    } else if (/^[-*] /.test(line)) {
+      if (!list) {
+        list = h('ul');
+        out.push(list);
+      }
+      list.append(h('li', inline(line.slice(2))));
+    } else {
+      list = null;
+      out.push(h('p', inline(line)));
+    }
+  }
+  return out;
+}
+
+/** After an update: what came with it. {@code all} shows the whole history (the About page). */
+export async function whatsNew(all = false) {
+  let notes = null;
+  try {
+    notes = all ? await api.app.changelog(language()) : await api.app.whatsNew(language());
+  } catch {
+    notes = null;
+  }
+  if (!notes || (!notes.launcher.length && !notes.mod.length)) return;
+  const block = (name, sections) => sections.map((s) => h('div.changes',
+    h('h3', `${name} ${s.version}`, h('span.dim', s.title.slice(s.version.length).replace(/^\s*[—-]\s*/, ' · '))),
+    markdown(s.body)));
+  modal((close) => [
+    modalHead(t('whatsnew.title'), all ? t('whatsnew.history') : t('whatsnew.subtitle'), close),
+    h('div.modal-body.whatsnew', block('Aurora Launcher', notes.launcher), block('Aurora', notes.mod)),
+    h('div.modal-foot', h('div.grow'), btn(t('whatsnew.ok'), { class: 'primary', onclick: () => close() })),
+  ], { wide: true, onClose: () => { if (!all) api.app.whatsNewSeen().catch(() => {}); } });
+}
+
+// ------------------------------------------------------------------ colours from the mod
+
+const MOD_THEMES = {
+  aurora: ['#2dd4bf', '#8b5cf6'],
+  ocean: ['#38bdf8', '#6366f1'],
+  sunset: ['#fb923c', '#ec4899'],
+  rose: ['#f472b6', '#a855f7'],
+  emerald: ['#34d399', '#22d3ee'],
+  crimson: ['#f43f5e', '#f97316'],
+  mono: ['#e5e7eb', '#8b93a3'],
+};
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.replace('#', '').slice(-6), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function mix(a, b, f) {
+  const x = hexToRgb(a);
+  const y = hexToRgb(b);
+  return `#${x.map((v, i) => Math.round(v + (y[i] - v) * f).toString(16).padStart(2, '0')).join('')}`;
+}
+
+function rgba(hex, alpha) {
+  return `rgba(${hexToRgb(hex).join(', ')}, ${alpha})`;
+}
+
+/** The custom accent's partner, like in the mod: the hue turned a little further. */
+function partner(hex) {
+  const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  let hue = 0;
+  if (d) hue = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  hue = (hue * 60 + 36 + 360) % 360;
+  const sat = max ? d / max : 0;
+  const v = Math.min(1, max * 0.95 + 0.05);
+  const c = v * sat;
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const m = v - c;
+  const [rr, gg, bb] = hue < 60 ? [c, x, 0] : hue < 120 ? [x, c, 0] : hue < 180 ? [0, c, x] : hue < 240 ? [0, x, c] : hue < 300 ? [x, 0, c] : [c, 0, x];
+  return `#${[rr, gg, bb].map((u) => Math.round((u + m) * 255).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Paints the launcher in the theme chosen in the mod's settings, when the player wants that. */
+async function applyModTheme() {
+  const root = document.documentElement.style;
+  const vars = ['--teal', '--blue', '--violet', '--accent', '--accent-soft'];
+  const theme = state.settings.themeFromMod ? await api.app.modTheme().catch(() => null) : null;
+  if (!theme) {
+    vars.forEach((v) => root.removeProperty(v));
+    return;
+  }
+  let [a, b] = MOD_THEMES[theme.theme] || MOD_THEMES.aurora;
+  if (theme.theme === 'custom' && theme.accent) {
+    a = `#${theme.accent.replace('#', '').slice(-6)}`;
+    b = partner(a);
+  }
+  const mid = mix(a, b, 0.5);
+  root.setProperty('--teal', a);
+  root.setProperty('--violet', b);
+  root.setProperty('--blue', mid);
+  root.setProperty('--accent', `linear-gradient(105deg, ${a} 0%, ${mid} 48%, ${b} 100%)`);
+  root.setProperty('--accent-soft', `linear-gradient(105deg, ${rgba(a, 0.16)}, ${rgba(b, 0.14)})`);
 }
 
 // ------------------------------------------------------------------ shell
@@ -388,8 +570,12 @@ async function boot() {
   on('settings', (s) => {
     shell.playbar.render();
     applySettings(s, previousSettings);
+    if (s.themeFromMod !== previousSettings.themeFromMod || s.selectedInstall !== previousSettings.selectedInstall) applyModTheme();
     previousSettings = s;
   });
+  applyModTheme();
+  // A moment after the window is up: what the update brought.
+  setTimeout(() => whatsNew(), 900);
   on('installs', () => shell.playbar.render());
   on('accounts', () => {
     shell.account.render();
@@ -421,6 +607,8 @@ async function boot() {
     set('game', g);
     if (g.state === 'idle') {
       set('progress', null);
+      // The theme may have been changed in the game.
+      if (previous !== 'idle') applyModTheme();
       // The first install brings the game's textures for icons and default skins.
       api.icons.catalog().then((list) => {
         setIconCatalog(list);
