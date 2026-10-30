@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const { EventEmitter } = require('events');
-const { allowed } = require('./rules');
+const { allowed, compareVersions } = require('./rules');
 
 /** Splits user-typed JVM arguments; quotes keep spaces inside one argument (-Dname="a b"). */
 function splitArgs(text) {
@@ -60,6 +60,25 @@ function dropEmpty(args, options) {
     out.push(args[i]);
   }
   return out;
+}
+
+/**
+ * authlib 2.0.26 to 2.1.28 (1.16.4, 1.16.5 and the snapshots around them) take the 401 an offline
+ * token gets for a valid answer with every privilege off, which greys out Multiplayer and chat with
+ * "check your Microsoft account settings". When the request fails outright, the game treats the
+ * player as offline and allows everything, so these versions get a services host that does not
+ * exist. authlib ignores the override unless the other hosts are set too; they keep their real values.
+ */
+function offlineServiceHosts(version) {
+  const lib = (version.libraries || []).find((l) => l.name.startsWith('com.mojang:authlib:'));
+  const authlib = lib && lib.name.split(':')[2];
+  if (!authlib || compareVersions(authlib, '2.0') < 0 || compareVersions(authlib, '2.1.29') >= 0) return [];
+  return [
+    '-Dminecraft.api.auth.host=https://authserver.mojang.com',
+    '-Dminecraft.api.account.host=https://api.mojang.com',
+    '-Dminecraft.api.session.host=https://sessionserver.mojang.com',
+    '-Dminecraft.api.services.host=https://nope.invalid',
+  ];
 }
 
 const GC_FLAG = /^-XX:[+-]Use\w*GC$/;
@@ -137,6 +156,7 @@ function buildCommand(prepared, o) {
   // Tells the Aurora mod that the account was picked in the launcher, and where skins are.
   jvm.push(`-Daurora.launcher=${o.launcherVersion}`);
   for (const [key, value] of Object.entries(o.properties || {})) jvm.push(`-D${key}=${value}`);
+  if (account.type !== 'microsoft') jvm.push(...offlineServiceHosts(v));
   jvm.push(...user);
 
   let game;

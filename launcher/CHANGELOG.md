@@ -2,6 +2,10 @@
 
 What changed in each version of Aurora Launcher. The Aurora mod has a changelog of its own (`../CHANGELOG.md`); the launcher shows both in "What's new" after an update.
 
+## 1.1.1 — 2026-10-30
+
+- Multiplayer and chat work on offline accounts in Minecraft 1.16.4, 1.16.5 and the snapshots around them. The game used to grey out the button and ask you to check your Microsoft account settings.
+
 ## 1.1.0 — 2026-10-28
 
 ### New pages
