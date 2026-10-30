@@ -26,7 +26,7 @@ const SCENES = (process.env.AURORA_TRAILER_SCENES || ALL.join(',')).split(',');
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-module.exports = ({ win, app, send }) => {
+module.exports = ({ win, app, send, accounts }) => {
   const js = (code) => win.webContents.executeJavaScript(code, true);
   let latest = null;
   let latestBitmap = null;
@@ -340,6 +340,7 @@ module.exports = ({ win, app, send }) => {
       win.webContents.setZoomFactor(ZOOM);
       win.webContents.setFrameRate(FPS);
       // The player's own name on the account card, the interface in English, then a fresh page.
+      accounts.data.gate = accounts.data.gate || 'microsoft';
       await js(`(async () => {
         await window.aurora.accounts.addOffline('K1llSofix');
         const res = await window.aurora.accounts.list();

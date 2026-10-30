@@ -2,7 +2,6 @@ import { h, fill, btn, clear, toast, toggle, segmented, menu } from '../dom.js';
 import { icon } from '../icons.js';
 import { t, formatMemory, errorText } from '../i18n.js';
 import { api, state, set, on, selectedInstall, showError } from '../store.js';
-import { clientIdDialog } from '../accounts.js';
 
 async function save(patch, quiet = false) {
   try {
@@ -142,24 +141,6 @@ function updateRow() {
   return { el, render };
 }
 
-function microsoftCard() {
-  const field = h('input.input.mono', { placeholder: '00000000-0000-0000-0000-000000000000', spellcheck: false, style: { width: '330px' } });
-  api.accounts.clientId().then((id) => { field.value = id || ''; }).catch(() => {});
-  field.addEventListener('change', async () => {
-    try {
-      await api.accounts.setClientId(field.value.trim());
-      field.classList.remove('invalid');
-      toast(t('settings.clientIdSaved'), { icon: 'key' });
-    } catch (e) {
-      field.classList.add('invalid');
-      toast(errorText(e.info), { error: true });
-    }
-  });
-  return h('div.card.set-card',
-    h('h3', icon('microsoft'), t('settings.microsoft')),
-    setRow(t('settings.clientId'), t('settings.clientIdHint'), h('div.row', field, btn('', { icon: 'info', class: 'icon', 'data-tip': t('accounts.clientTitle'), onclick: () => clientIdDialog() }))));
-}
-
 export function render() {
   const s = state.settings;
   const jvm = h('input.input.mono', { value: s.jvmArgs || '', placeholder: '-XX:+UseZGC', style: { width: '330px' } });
@@ -187,7 +168,6 @@ export function render() {
         setRow(t('settings.discord'), t('settings.discordHint'), toggle(s.discord !== false, (on) => save({ discord: on }))),
         setRow(t('settings.autoUpdate'), t('settings.autoUpdateHint'), toggle(s.autoUpdate !== false, (on) => save({ autoUpdate: on }))),
         updates.el),
-      microsoftCard(),
       h('div.card.set-card',
         h('h3', icon('folder'), t('settings.files')),
         setRow(t('settings.root'), state.info.root, btn(t('settings.open'), { icon: 'folder', onclick: () => api.app.openFolder('root') })),

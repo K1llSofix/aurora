@@ -114,4 +114,7 @@ const AURORA_PAGE = `https://modrinth.com/mod/${AURORA_MODRINTH}`;
  */
 const LAUNCHER_REPO = 'K1llSofix/aurora';
 
-module.exports = { recommendedMemory, defaultInstall, defaultSettings, SERVERS, AURORA_NEWS, DISCORD_APP_ID, AURORA_MODRINTH, AURORA_PAGE, LAUNCHER_REPO };
+/** The launcher's Azure app (personal Microsoft accounts, public client flows on). */
+const MICROSOFT_CLIENT_ID = '9b1bb08c-81c0-4f57-88f2-cb4ea9add638';
+
+module.exports = { recommendedMemory, defaultInstall, defaultSettings, SERVERS, AURORA_NEWS, DISCORD_APP_ID, AURORA_MODRINTH, AURORA_PAGE, LAUNCHER_REPO, MICROSOFT_CLIENT_ID };

@@ -54,13 +54,13 @@ The first launch downloads about 700 MB.
 
 ### Microsoft sign-in
 
-Mojang only lets approved applications into Minecraft, so signing in with a licensed account needs the **Client ID** of an Azure application. It is entered once in the Settings or the first time you add a Microsoft account:
+The launcher has its own Azure application, so there is nothing to set up: you type a short code on microsoft.com/link, and your password stays on Microsoft's site.
 
-1. Register an application on [portal.azure.com](https://portal.azure.com): "Personal Microsoft accounts", and under Authentication turn on "Allow public client flows".
-2. Apply to Mojang for access to the Minecraft API: [aka.ms/mce-reviewappid](https://aka.ms/mce-reviewappid).
-3. Paste the Application (client) ID into the launcher.
+Mojang only lets approved applications into Minecraft and has not approved this one yet, so for now the sign-in gives no licensed account to play on.
 
-Offline accounts work without this.
+### Offline accounts
+
+A new offline name needs a Microsoft sign-in on this computer first, once. Until Mojang approves the launcher, that sign-in cannot check whether the account owns the game, so any Microsoft account with an Xbox profile passes. After approval the account has to own Minecraft: Java Edition. Names saved by an earlier version keep working.
 
 ## Development
 

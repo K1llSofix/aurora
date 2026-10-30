@@ -9,11 +9,11 @@ const { JsonStore } = require('./store');
 const { LauncherError } = require('./errors');
 const { withZip } = require('./zip');
 const { compareVersions } = require('./rules');
+const { MICROSOFT_CLIENT_ID } = require('../defaults');
 
 const AUTHORITY = 'https://login.microsoftonline.com/consumers/oauth2/v2.0/';
 const SCOPE = 'XboxLive.signin offline_access';
 const NAME = /^[A-Za-z0-9_]{3,16}$/;
-const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Refresh a Minecraft token that expires within this time. */
 const REFRESH_MARGIN = 10 * 60 * 1000;
 const DEFAULT_SKINS = ['alex', 'ari', 'efe', 'kai', 'makena', 'noor', 'steve', 'sunny', 'zuri'];
@@ -61,11 +61,15 @@ function xboxError(code) {
  * Saved accounts: offline names and Microsoft accounts. Microsoft sign-in uses the OAuth device
  * code flow, so the password is typed on microsoft.com and never reaches the launcher; the
  * refresh token is kept encrypted with the OS key store (DPAPI on Windows).
+ *
+ * New offline names need a Microsoft sign-in on this computer first ({@code gate}): "owner" when
+ * the account owns the game, "microsoft" when Mojang has not approved the launcher yet, which
+ * leaves no way to check that. Names saved before the gate existed keep working.
  */
 class Accounts extends EventEmitter {
   constructor({ file, versionsDir, cacheDir, protect, unprotect }) {
     super();
-    this.store = new JsonStore(file, { selected: null, clientId: '', accounts: [] });
+    this.store = new JsonStore(file, { selected: null, gate: null, accounts: [] });
     this.versionsDir = versionsDir;
     this.cacheDir = cacheDir;
     this.protect = protect;
@@ -115,7 +119,12 @@ class Accounts extends EventEmitter {
     this.changed();
   }
 
+  offlineUnlocked() {
+    return Boolean(this.data.gate);
+  }
+
   addOffline(name) {
+    if (!this.offlineUnlocked()) throw new LauncherError('offline_locked');
     name = String(name || '').trim();
     if (!NAME.test(name)) throw new LauncherError('bad_name', name);
     const uuid = offlineUuid(name);
@@ -128,27 +137,16 @@ class Accounts extends EventEmitter {
     return id;
   }
 
-  clientId() {
-    return this.data.clientId || '';
-  }
-
-  setClientId(id) {
-    id = String(id || '').trim();
-    if (id && !GUID.test(id)) throw new LauncherError('ms_client_format', id);
-    this.data.clientId = id;
-    this.changed();
-  }
-
   // ------------------------------------------------------------------ Microsoft sign-in
 
   /**
    * Signs in a Microsoft account. {@code onCode} receives the code to type on the Microsoft page;
-   * the promise resolves with the new account id once the player has signed in.
+   * the promise resolves with the new account id once the player has signed in, or with null when
+   * Microsoft and Xbox Live accepted the player but Mojang has not approved the launcher, so there
+   * is no account to play on yet.
    */
   async signIn({ onCode, signal }) {
-    const clientId = this.clientId();
-    if (!clientId) throw new LauncherError('ms_no_client_id');
-    const start = await net.postForm(`${AUTHORITY}devicecode`, { client_id: clientId, scope: SCOPE }, { signal });
+    const start = await net.postForm(`${AUTHORITY}devicecode`, { client_id: MICROSOFT_CLIENT_ID, scope: SCOPE }, { signal });
     if (!start.json.device_code) throw new LauncherError('ms_client_id', start.json.error_description || start.raw);
     const expiresAt = Date.now() + (start.json.expires_in || 900) * 1000;
     onCode({ code: start.json.user_code, url: start.json.verification_uri, expiresAt });
@@ -170,7 +168,7 @@ class Accounts extends EventEmitter {
       });
       const res = await net.postForm(`${AUTHORITY}token`, {
         grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-        client_id: clientId,
+        client_id: MICROSOFT_CLIENT_ID,
         device_code: start.json.device_code,
       }, { signal });
       if (res.json.access_token) {
@@ -191,7 +189,16 @@ class Accounts extends EventEmitter {
           throw new LauncherError('ms_failed', res.json.error_description || res.raw);
       }
     }
-    const session = await this.minecraft(tokens.access, signal);
+    let session;
+    try {
+      session = await this.minecraft(tokens.access, signal);
+    } catch (e) {
+      if (e.code !== 'ms_not_approved') throw e;
+      this.data.gate = this.data.gate || 'microsoft';
+      this.changed();
+      return null;
+    }
+    this.data.gate = 'owner';
     const id = `microsoft:${session.uuid}`;
     const existing = this.data.accounts.find((a) => a.id === id);
     const account = existing || { id, type: 'microsoft', added: Date.now() };
@@ -261,11 +268,9 @@ class Accounts extends EventEmitter {
     }
     const ms = account.ms || {};
     if (!ms.access || !ms.expires || ms.expires - Date.now() < REFRESH_MARGIN) {
-      const clientId = this.clientId();
-      if (!clientId) throw new LauncherError('ms_no_client_id');
       const refresh = ms.refresh ? this.unprotect(ms.refresh) : null;
       if (!refresh) throw new LauncherError('ms_relogin');
-      const res = await net.postForm(`${AUTHORITY}token`, { grant_type: 'refresh_token', client_id: clientId, refresh_token: refresh, scope: SCOPE });
+      const res = await net.postForm(`${AUTHORITY}token`, { grant_type: 'refresh_token', client_id: MICROSOFT_CLIENT_ID, refresh_token: refresh, scope: SCOPE });
       if (!res.json.access_token) {
         if (res.status === 400) {
           ms.broken = true;

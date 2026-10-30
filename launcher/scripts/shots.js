@@ -13,7 +13,7 @@ const PLAN = (process.env.AURORA_PLAN || 'home,installs,servers,mods,mods-catalo
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-module.exports = ({ win, app }) => {
+module.exports = ({ win, app, accounts }) => {
   const js = (code) => win.webContents.executeJavaScript(code, true);
   const shot = async (name) => {
     const image = await win.webContents.capturePage();
@@ -51,6 +51,7 @@ module.exports = ({ win, app }) => {
         }
         if (page === 'launch') {
           // Full launch through the interface: an offline account, Play, the game, then stop it.
+          accounts.data.gate = accounts.data.gate || 'microsoft';
           await js("window.aurora.accounts.addOffline('AuroraTester')");
           await wait(800);
           await js("document.querySelector('.play-btn').click()");
@@ -119,18 +120,38 @@ module.exports = ({ win, app }) => {
           continue;
         }
         if (page === 'msflow') {
-          // Microsoft sign-in without a Client ID stops at the Client ID form.
+          // The gate on offline accounts, in a data root (AURORA_HOME) without accounts, with
+          // Microsoft and Xbox Live faked and Mojang answering that the launcher is not approved.
+          const json = (status, body) => new Response(JSON.stringify(body), { status });
+          require('../src/main/core/net').configure({
+            fetch: async (url, init) => {
+              if (url.includes('/devicecode')) return json(200, { device_code: 'd', user_code: 'ABCD-EFGH', verification_uri: 'https://www.microsoft.com/link', expires_in: 900, interval: 2 });
+              if (url.includes('/oauth2/v2.0/token')) return json(200, { access_token: 'a', refresh_token: 'r' });
+              if (url.includes('user.auth.xboxlive')) return json(200, { Token: 'x', DisplayClaims: { xui: [{ uhs: 'h' }] } });
+              if (url.includes('xsts.auth.xboxlive')) return json(200, { Token: 'y' });
+              if (url.includes('login_with_xbox')) return json(403, {});
+              return globalThis.fetch(url, init);
+            },
+          });
           await js("document.querySelector('.account-card').click()");
-          await wait(500);
-          await js("[...document.querySelectorAll('.popover .menu-item')].pop().click()");
-          await wait(600);
-          await js("document.querySelector('.choice').click()");
+          await wait(700);
+          await shot('msflow-locked');
+          await js("document.querySelectorAll('.choice')[1].click()");
+          await wait(1000);
+          await shot('msflow-code');
+          await wait(2500);
+          await shot('msflow-unapproved');
+          await js("const i = document.querySelector('.modal input'); i.value = 'AuroraTester'; i.dispatchEvent(new Event('input')); [...document.querySelectorAll('.modal-foot .btn')].pop().click(); true");
           await wait(900);
-          await shot('msflow-client');
-          await js("const i = document.querySelector('.modal input'); i.value = 'not-a-guid'; true");
-          await js("[...document.querySelectorAll('.modal-foot .btn')].pop().click()");
-          await wait(600);
-          await shot('msflow-invalid');
+          await shot('msflow-added');
+          await js("document.querySelector('.account-card').click()");
+          await wait(400);
+          await js("[...document.querySelectorAll('.popover .menu-item')].pop().click()");
+          await wait(700);
+          await shot('msflow-unlocked');
+          await js("document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}))");
+          await wait(400);
+          console.log('[shots] accounts', JSON.stringify(accounts.list().map((a) => a.id)), 'gate', accounts.data.gate);
           continue;
         }
         if (page === 'modinstall') {

@@ -1,7 +1,7 @@
 import { h, fill, btn, iconBtn, modal, modalHead, popover, toast, head, clear, forgetFaces } from './dom.js';
 import { skinEditor } from './skin-editor.js';
 import { icon } from './icons.js';
-import { t, errorText } from './i18n.js';
+import { t } from './i18n.js';
 import { api, state, set, currentAccount, showError } from './store.js';
 
 const NAME = /^[A-Za-z0-9_]{3,16}$/;
@@ -98,21 +98,23 @@ export function editSkin(account) {
   });
 }
 
-/** Picks the kind of account to add. */
-export function addAccountDialog() {
+/** Picks the kind of account to add. An offline name asks for a Microsoft sign-in first. */
+export async function addAccountDialog() {
+  const unlocked = await api.accounts.offlineUnlocked().catch(() => false);
   modal((close) => [
     modalHead(t('accounts.addTitle'), t('accounts.addSubtitle'), close),
     h('div.modal-body',
       h('div.choice-grid',
-        h('button.choice', { type: 'button', onclick: () => { close(); microsoftDialog(); } },
+        h('button.choice', { type: 'button', onclick: () => { close(); signInDialog(); } },
           h('div.ic', icon('microsoft')), h('div.t', t('accounts.microsoft')), h('div.d', t('accounts.microsoftSub'))),
-        h('button.choice', { type: 'button', onclick: () => { close(); offlineDialog(); } },
-          h('div.ic', icon('user')), h('div.t', t('accounts.offline')), h('div.d', t('accounts.offlineSub'))))),
+        h('button.choice', { type: 'button', onclick: () => { close(); if (unlocked) offlineDialog(); else signInDialog(true); } },
+          h('div.ic', icon('user')), h('div.t', t('accounts.offline')), h('div.d', t(unlocked ? 'accounts.offlineSub' : 'accounts.offlineLocked'))))),
     h('div.modal-foot'),
   ]);
 }
 
-function offlineDialog() {
+/** {@code unapproved}: the player just signed in, and Mojang has not approved the launcher. */
+function offlineDialog(unapproved = false) {
   modal((close) => {
     const input = h('input.input', { placeholder: t('accounts.namePlaceholder'), maxlength: 16, spellcheck: false });
     const hint = h('div.hint', t('accounts.nameHint'));
@@ -143,6 +145,7 @@ function offlineDialog() {
     return [
       modalHead(t('accounts.offlineTitle'), null, close),
       h('div.modal-body',
+        unapproved ? h('div.note', t('accounts.msUnapproved')) : null,
         h('div.field', h('label', t('accounts.name')), h('div.input-wrap', icon('user'), input), hint),
         h('div.note', t('accounts.offlineNote'))),
       h('div.modal-foot', btn(t('common.cancel'), { onclick: () => close() }), add),
@@ -150,51 +153,8 @@ function offlineDialog() {
   });
 }
 
-/** Microsoft sign-in: the Client ID once, then the device code to type on microsoft.com. */
-async function microsoftDialog() {
-  let clientId = '';
-  try {
-    clientId = await api.accounts.clientId();
-  } catch {
-    clientId = '';
-  }
-  if (!clientId) clientIdDialog(() => signInDialog());
-  else signInDialog();
-}
-
-export function clientIdDialog(then) {
-  modal((close) => {
-    const input = h('input.input.mono', { placeholder: '00000000-0000-0000-0000-000000000000', spellcheck: false });
-    const error = h('div.error.hidden');
-    const save = btn(t('accounts.clientContinue'), { class: 'primary' });
-    const steps = h('div.note', { style: { whiteSpace: 'pre-line' } }, t('accounts.clientSteps'));
-    const text = h('p.muted', { style: { margin: 0 }, html: t('accounts.clientText') });
-    save.addEventListener('click', async () => {
-      try {
-        await api.accounts.setClientId(input.value.trim());
-        close();
-        then?.();
-      } catch (e) {
-        error.textContent = errorText(e.info);
-        error.classList.remove('hidden');
-        input.classList.add('invalid');
-      }
-    });
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') save.click();
-    });
-    return [
-      modalHead(t('accounts.clientTitle'), null, close),
-      h('div.modal-body', text, steps, h('div.field', h('label', t('settings.clientId')), input, error)),
-      h('div.modal-foot',
-        btn('aka.ms/mce-reviewappid', { class: 'ghost', icon: 'external', onclick: () => api.app.openExternal('https://aka.ms/mce-reviewappid') }),
-        h('div.grow'),
-        btn(t('common.cancel'), { onclick: () => close() }), save),
-    ];
-  });
-}
-
-function signInDialog() {
+/** Microsoft sign-in with a device code typed on microsoft.com; then the offline form if asked for. */
+function signInDialog(thenOffline = false) {
   let unsubscribe = null;
   let finished = false;
   const dialog = modal((close) => {
@@ -231,9 +191,12 @@ function signInDialog() {
   });
   api.accounts.signIn().then((id) => {
     finished = true;
-    const account = state.accounts.find((a) => a.id === id);
-    toast(t('accounts.msDone', { name: account ? account.name : '' }), { icon: 'check' });
     dialog.close();
+    if (id) {
+      const account = state.accounts.find((a) => a.id === id);
+      toast(t('accounts.msDone', { name: account ? account.name : '' }), { icon: 'check' });
+    }
+    if (!id || thenOffline) offlineDialog(!id);
   }).catch((e) => {
     finished = true;
     if (e.info && e.info.code === 'cancelled') return;

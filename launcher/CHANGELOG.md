@@ -2,6 +2,12 @@
 
 What changed in each version of Aurora Launcher. The Aurora mod has a changelog of its own (`../CHANGELOG.md`); the launcher shows both in "What's new" after an update.
 
+## 1.1.2 — 2026-10-31
+
+- A new offline account needs a Microsoft sign-in on this computer first, once. Accounts you already have keep working.
+- The launcher has its own Client ID, so the Azure Client ID field is gone.
+- Until Mojang approves the launcher, the sign-in only unlocks offline accounts: playing on a licensed account is not available yet.
+
 ## 1.1.1 — 2026-10-30
 
 - Multiplayer and chat work on offline accounts in Minecraft 1.16.4, 1.16.5 and the snapshots around them. The game used to grey out the button and ask you to check your Microsoft account settings.

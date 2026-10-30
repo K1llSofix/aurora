@@ -949,8 +949,7 @@ function registerIpc() {
     const custom = account && account.type === 'offline' ? skins.read(account.uuid) : null;
     return custom ? custom.dataUrl : accounts.skin(id);
   });
-  handle('accounts:clientId', () => accounts.clientId());
-  handle('accounts:setClientId', (id) => accounts.setClientId(id));
+  handle('accounts:offlineUnlocked', () => accounts.offlineUnlocked());
   handle('accounts:signIn', async () => {
     signIn?.abort();
     signIn = new AbortController();
@@ -1485,7 +1484,7 @@ app.whenReady().then(() => {
   const launchArg = parseLaunch(process.argv);
   if (launchArg) directLaunch(launchArg);
   else createWindow();
-  if (process.env.AURORA_SCRIPT && DEV) require(path.resolve(process.env.AURORA_SCRIPT))({ win, app, send });
+  if (process.env.AURORA_SCRIPT && DEV) require(path.resolve(process.env.AURORA_SCRIPT))({ win, app, send, accounts });
 });
 
 app.on('second-instance', (event, argv) => {
